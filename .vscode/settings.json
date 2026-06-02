@@ -1,0 +1,6 @@
+﻿{
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestArgs": ["."],
+  "python.testing.unittestEnabled": false,
+  "files.exclude": { "**/__pycache__": true, "**/.pytest_cache": true }
+}

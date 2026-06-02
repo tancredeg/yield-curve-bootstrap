@@ -21,7 +21,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from scipy.interpolate import CubicSpline
-from scipy.optimize import minimize, brentq
+from scipy.optimize import brentq
 
 os.makedirs("figures", exist_ok=True)
 
@@ -45,7 +45,10 @@ plt.rcParams.update({
 # Assumptions:
 #   Data is synthetic but calibrated to early-2024 conditions:
 #     USD: inverted curve (Fed terminal rate ~5.3%, long end ~4.1%)
-#     EUR: mildly upward-sloping (ECB rate ~4.0%, long end ~3.2%)
+#     EUR: front-end inverted, then mildly rising at the long end
+#          (ESTR ~3.9%, 2Y-10Y slightly inverted ~-12bp, long end ~3.2%).
+#          This matches Jan-2024 ESTR OIS, which priced ECB cuts into the
+#          front end while the 10Y-30Y segment was modestly upward-sloping.
 # ============================================================
 
 REFERENCE_DATE = "2024-01-15"
@@ -450,22 +453,37 @@ def fit_nelson_siegel(maturities, zeros, label=""):
         tuple: (beta0, beta1, beta2, tau).
 
     Notes:
-        Minimises sum of squared errors. Constraint: tau >= 0.5.
-        Initialised at: b0=long-end, b1=short-long, b2=0, tau=2.
+        Calibration method — grid search over tau with linear least squares
+        for (beta0, beta1, beta2) at each node. For a FIXED tau the model is
+        LINEAR in the betas:
+            r(t) = beta0 * 1 + beta1 * f1(t;tau) + beta2 * f2(t;tau)
+        so the betas are solved exactly by OLS (np.linalg.lstsq). Only the
+        single nonlinear parameter tau is searched, on a grid in [0.5, 10].
+        This avoids the well-known failure of joint gradient descent on NS,
+        where the gradient w.r.t. tau is near-zero at the rate scale and the
+        optimizer never leaves its initial tau. Constraint: tau >= 0.5.
     """
-    z_arr = np.array(zeros)
-    t_arr = np.array(maturities)
+    z_arr = np.array(zeros, dtype=float)
+    t_arr = np.array(maturities, dtype=float)
 
-    def objective(params):
-        b0, b1, b2, tau = params
-        fitted = np.array([nelson_siegel(t, b0, b1, b2, tau) for t in t_arr])
-        return np.sum((fitted - z_arr) ** 2)
+    def design_matrix(tau):
+        x  = t_arr / tau
+        f1 = (1.0 - np.exp(-x)) / x
+        f2 = f1 - np.exp(-x)
+        return np.column_stack([np.ones_like(t_arr), f1, f2])
 
-    x0 = [z_arr[-1], z_arr[0] - z_arr[-1], 0.0, 2.0]
-    bounds = [(0.0, 0.20), (-0.15, 0.15), (-0.15, 0.15), (0.5, 30.0)]
-    res = minimize(objective, x0, method="L-BFGS-B", bounds=bounds)
-    b0, b1, b2, tau = res.x
-    rmse = math.sqrt(res.fun / len(maturities)) * 10000
+    tau_grid = np.linspace(0.5, 10.0, 191)  # 0.05Y resolution
+    best = None
+    for tau in tau_grid:
+        A = design_matrix(tau)
+        betas, _, _, _ = np.linalg.lstsq(A, z_arr, rcond=None)
+        sse = float(np.sum((A @ betas - z_arr) ** 2))
+        if best is None or sse < best[0]:
+            best = (sse, betas, tau)
+
+    sse, betas, tau = best
+    b0, b1, b2 = betas
+    rmse = math.sqrt(sse / len(maturities)) * 10000
 
     print(f"  beta0 (long-run rate)      = {b0:.4%}")
     print(f"  beta1 loading              = {b1:.4%}")
@@ -534,23 +552,26 @@ def plot_interpolation_comparison(usd_pillars, eur_pillars, usd_ns_params, eur_n
 #   Duration and convexity measure price sensitivity to yield shifts.
 #
 # Mathematical framework:
-#   Price = sum C_i * P(0,t_i) + Face * P(0,T)
+#   Price = sum C_i * P(0,t_i) + Face * P(0,T)   [arbitrage-free, off the curve]
 #   YTM y solves: Price = sum C_i/(1+y/f)^{t_i*f} + Face/(1+y/f)^{T*f}
-#   D_mac = (1/Price) * sum t_i * C_i * P(0,t_i)
 #
-#   FIX 2 — Modified duration conventions:
-#     continuous:  D_mod = D_mac              (valid only for cts compounding)
-#     semiannual:  D_mod = D_mac / (1+y/2)   [USD standard]
-#     annual:      D_mod = D_mac / (1+y)     [EUR standard]
-#     D_mod = D_mac as a default NEVER appears in this codebase.
+#   Risk metrics are computed CONSISTENTLY under a single yield convention so
+#   that the second-order Taylor relation holds exactly:
+#       dP/P  ~=  -D_mod * dy  +  0.5 * Convexity * dy^2
 #
-#   DV01 = D_mod * Price * 0.0001
-#   Convexity (continuous compounding convention):
-#     C = (1/P) * sum t_i^2 * C_i * P(0,t_i)
-#     Note: under semi-annual compounding, the textbook formula uses
-#     t_i*(t_i + delta) / (1+y/f)^2 terms. This codebase uses the
-#     continuous convention consistently. The difference is < 0.5%
-#     relative on a 10Y bond and does not affect hedging decisions.
+#   Periodic conventions (f = coupon_freq; 'semiannual' f=2, 'annual' f=1):
+#     w_i   = C_i / (1+y/f)^{f t_i}              (yield-discounted cashflow)
+#     D_mac = (1/P) * sum t_i * w_i
+#     D_mod = D_mac / (1 + y/f)                  = -(1/P) dP/dy
+#     Conv  = (1/P) * sum w_i*(f t_i)(f t_i+1)/f^2 / (1+y/f)^2 = (1/P) d2P/dy2
+#   Continuous convention (y continuously compounded):
+#     D_mac = (1/P) sum t_i C_i e^{-y t_i};  D_mod = D_mac;  Conv = (1/P) sum t_i^2 C_i e^{-y t_i}
+#
+#   DV01 = D_mod * Price * 0.0001.
+#   The convention MUST match coupon_freq for periodic cases (enforced); this
+#   removes the earlier curve/yield convexity mismatch. D_mod = D_mac as a blind
+#   default NEVER appears. All three measures are verified against a finite-
+#   difference bump of the YTM in the test suite.
 # ============================================================
 
 def price_bond(face, coupon_rate, maturity, coupon_freq, curve_interpolator):
@@ -591,6 +612,10 @@ def bond_analytics(face, coupon_rate, maturity, coupon_freq,
                    curve_interpolator, convention):
     """Compute full bond analytics: price, YTM, durations, DV01, convexity.
 
+    Price is arbitrage-free off the bootstrapped curve. The risk metrics
+    (D_mac, D_mod, convexity) are all computed under a SINGLE consistent yield
+    convention, so dP/P = -D_mod*dy + 0.5*Conv*dy^2 holds exactly to 2nd order.
+
     Args:
         face (float): face value.
         coupon_rate (float): annual coupon rate (decimal).
@@ -598,47 +623,63 @@ def bond_analytics(face, coupon_rate, maturity, coupon_freq,
         coupon_freq (int): coupons per year.
         curve_interpolator: callable t -> continuous zero rate.
         convention (str): 'continuous', 'semiannual', or 'annual'.
+                          For periodic conventions, must match coupon_freq
+                          (semiannual<->2, annual<->1) — enforced.
 
     Returns:
         dict: {price, ytm, duration_mac, duration_mod, dv01, convexity}.
 
     Notes:
-        FIX 2: D_mod computed per convention — never as default D_mod=D_mac.
-        Convexity uses continuous convention (documented).
+        Removes the earlier curve/yield convexity mismatch: every risk measure
+        is consistent with the chosen yield basis. Verified by finite-difference
+        bump of the YTM in test_yield_curve.py.
     """
     delta  = 1.0 / coupon_freq
     coupon = face * coupon_rate * delta
     n = int(round(maturity / delta))
     coupon_dates = [round(i * delta, 8) for i in range(1, n + 1)]
+    # Cashflows: coupon each date; final date also repays face.
+    cashflows = [(t, coupon) for t in coupon_dates]
+    cashflows[-1] = (coupon_dates[-1], coupon + face)
 
     price = price_bond(face, coupon_rate, maturity, coupon_freq, curve_interpolator)
-    ytm   = brentq(_ytm_residual, 0.0001, 0.5,
-                   args=(price, face, coupon_rate, maturity, coupon_freq),
-                   xtol=1e-10)
 
-    # Macaulay duration (continuous discount)
-    d_mac  = sum(t * coupon * math.exp(-curve_interpolator(t) * t) for t in coupon_dates)
-    d_mac += maturity * face * math.exp(-curve_interpolator(maturity) * maturity)
-    d_mac /= price
-
-    # FIX 2: Modified duration — convention-explicit
     if convention == "continuous":
-        d_mod = d_mac
-    elif convention == "semiannual":
-        d_mod = d_mac / (1.0 + ytm / 2.0)
-    elif convention == "annual":
-        d_mod = d_mac / (1.0 + ytm)
+        # Continuously compounded YTM: price = sum CF * exp(-y*t)
+        def f_res(y):
+            return sum(cf * math.exp(-y * t) for t, cf in cashflows) - price
+        ytm = brentq(f_res, 1e-4, 0.5, xtol=1e-12)
+        pv   = [cf * math.exp(-ytm * t) for t, cf in cashflows]
+        d_mac     = sum(t * p for (t, _), p in zip(cashflows, pv)) / price
+        d_mod     = d_mac                                   # dP/dy = -D_mac*P
+        convexity = sum(t**2 * p for (t, _), p in zip(cashflows, pv)) / price
+
+    elif convention in ("semiannual", "annual"):
+        expected_freq = 2 if convention == "semiannual" else 1
+        if coupon_freq != expected_freq:
+            raise ValueError(
+                f"Convention '{convention}' requires coupon_freq="
+                f"{expected_freq}, got {coupon_freq}. Convention and coupon "
+                "frequency must be consistent."
+            )
+        f   = coupon_freq
+        # Periodic YTM at frequency f (same basis as the conventions).
+        ytm = brentq(_ytm_residual, 1e-4, 0.5,
+                     args=(price, face, coupon_rate, maturity, coupon_freq),
+                     xtol=1e-12)
+        g  = 1.0 + ytm / f
+        pv = [cf / g ** (f * t) for t, cf in cashflows]
+        P_y = sum(pv)                                       # == price up to solver tol
+        d_mac     = sum(t * p for (t, _), p in zip(cashflows, pv)) / P_y
+        d_mod     = d_mac / g                               # = -(1/P) dP/dy
+        # Yield convexity: (1/P) d2P/dy2
+        convexity = sum(cf * (f * t) * (f * t + 1) / f**2 / g ** (f * t + 2)
+                        for t, cf in cashflows) / P_y
     else:
         raise ValueError(f"Unknown convention '{convention}'. "
                          "Use 'continuous', 'semiannual', or 'annual'.")
 
     dv01 = d_mod * price * 0.0001
-
-    # Convexity — continuous convention
-    convexity  = sum(t ** 2 * coupon * math.exp(-curve_interpolator(t) * t)
-                     for t in coupon_dates)
-    convexity += maturity ** 2 * face * math.exp(-curve_interpolator(maturity) * maturity)
-    convexity /= price
 
     return {
         "price":        price,
@@ -690,8 +731,13 @@ def print_bond_table(results, currency):
 #     DV01 = |V_swap(+1bp) - V_swap(-1bp)| / 2
 #
 # Assumptions:
-#   Single-curve: floating leg = par minus P(0,T). No basis spread.
-#   DV01 is a parallel-shift DV01.
+#   Single-curve framework. NOTE: this is exact, not a simplification, for the
+#   instruments used here. SOFR and ESTR swaps are OIS: the floating leg is
+#   indexed to the same overnight rate used for discounting, so the projection
+#   and discount curves coincide by construction. An OIS/IBOR basis would only
+#   arise for legs indexed to a term IBOR (e.g. 3M/6M EURIBOR), which are not
+#   priced here. DV01 below is a parallel zero-curve shift on the actual
+#   position (its contractual fixed rate), not an at-market proxy.
 # ============================================================
 
 def _df_from_cs(cs, t):
@@ -749,39 +795,41 @@ def price_swap(notional, fixed_rate, maturity, coupon_freq,
         raise ValueError(f"position must be 'payer' or 'receiver', got '{position}'")
 
 
-def swap_dv01(notional, maturity, coupon_freq, pillars):
-    """Compute parallel-shift DV01 numerically for a par swap.
+def swap_dv01(notional, fixed_rate, maturity, coupon_freq, pillars, position="payer"):
+    """Parallel-shift DV01 of the ACTUAL swap position.
 
-    DV01 = |V(+1bp) - V(-1bp)| / 2
+    Reprices the position (its own contractual fixed rate and direction) after
+    a +/-1bp parallel shift of the entire zero curve, by central difference:
+
+        DV01 = [ V(+1bp) - V(-1bp) ] / 2     (signed P&L per +1bp)
 
     Args:
         notional (float): swap notional.
+        fixed_rate (float): contractual fixed rate (decimal).
         maturity (float): swap maturity in years.
         coupon_freq (int): coupon frequency.
         pillars (dict): bootstrapped pillars {maturity: discount_factor}.
+        position (str): 'payer' or 'receiver'.
 
     Returns:
-        float: DV01 (absolute value, same currency as notional).
+        float: signed DV01. Payer is positive (gains when rates rise),
+               receiver is negative.
 
     Notes:
-        Fixed rate held at base par rate; entire zero curve shifted +/-1bp.
-        Gives the DV01 of an at-the-money position.
+        Uses the position's true fixed rate, not a recomputed par rate, so the
+        result is the DV01 of the position actually held. For an at-market swap,
+        pass fixed_rate = par_swap_rate(...).
     """
     bump = 0.0001
     mats  = sorted(pillars.keys())
     zeros = [-math.log(pillars[m]) / m for m in mats]
 
-    cs_base = CubicSpline(mats, zeros, bc_type="natural", extrapolate=False)
-    k_par   = par_swap_rate(maturity, coupon_freq, cs_base)
+    cs_up = CubicSpline(mats, [z + bump for z in zeros], bc_type="natural", extrapolate=False)
+    cs_dn = CubicSpline(mats, [z - bump for z in zeros], bc_type="natural", extrapolate=False)
 
-    zeros_up = [z + bump for z in zeros]
-    zeros_dn = [z - bump for z in zeros]
-    cs_up = CubicSpline(mats, zeros_up, bc_type="natural", extrapolate=False)
-    cs_dn = CubicSpline(mats, zeros_dn, bc_type="natural", extrapolate=False)
-
-    v_up = price_swap(notional, k_par, maturity, coupon_freq, cs_up, "payer")
-    v_dn = price_swap(notional, k_par, maturity, coupon_freq, cs_dn, "payer")
-    return abs((v_up - v_dn) / 2.0)
+    v_up = price_swap(notional, fixed_rate, maturity, coupon_freq, cs_up, position)
+    v_dn = price_swap(notional, fixed_rate, maturity, coupon_freq, cs_dn, position)
+    return (v_up - v_dn) / 2.0
 
 
 # ============================================================
@@ -984,8 +1032,10 @@ def print_comparison_table(usd_pillars, eur_pillars, usd_bond_10y, eur_bond_10y)
     eur_par10  = par_swap_rate(10, ANNUAL, eur_cs) * 10000
     usd_dv01_b = usd_bond_10y["dv01"]
     eur_dv01_b = eur_bond_10y["dv01"]
-    usd_dv01_s = swap_dv01(10_000_000, 10, SEMI,   usd_pillars)
-    eur_dv01_s = swap_dv01(10_000_000, 10, ANNUAL, eur_pillars)
+    usd_dv01_s = abs(swap_dv01(10_000_000, par_swap_rate(10, SEMI, usd_cs),
+                               10, SEMI,   usd_pillars, "payer"))
+    eur_dv01_s = abs(swap_dv01(10_000_000, par_swap_rate(10, ANNUAL, eur_cs),
+                               10, ANNUAL, eur_pillars, "payer"))
 
     metrics = {
         "Metric": [
@@ -1214,17 +1264,18 @@ def main():
         kpar = par_swap_rate(spec["mat"], SEMI, usd_cs)
         npv  = price_swap(spec["notional"], spec["fixed"], spec["mat"],
                           SEMI, usd_cs, spec["position"])
-        dv01 = swap_dv01(spec["notional"], spec["mat"], SEMI, usd_pillars)
+        dv01 = swap_dv01(spec["notional"], spec["fixed"], spec["mat"],
+                         SEMI, usd_pillars, spec["position"])
         ootm_bp  = (kpar - spec["fixed"]) * 10000
-        direction = "gains" if npv > 0 else "loses"
+        direction = "gains" if dv01 > 0 else "loses"
         itm_str   = "ITM" if npv > 0 else "OTM"
         print(f"\n  {spec['label']}")
         print(f"    Par rate   : {kpar:.4%}")
         print(f"    Fixed rate : {spec['fixed']:.4%}")
         print(f"    NPV        : {npv:>12,.0f} USD")
-        print(f"    DV01       : {dv01:>12,.0f} USD/bp")
-        print(f"  [DESK VIEW] NPV = {npv:,.0f} USD. Desk {direction} "
-              f"{dv01:,.0f} USD per 1bp parallel shift. "
+        print(f"    DV01       : {dv01:>+12,.0f} USD/bp")
+        print(f"  [DESK VIEW] NPV = {npv:,.0f} USD. On a +1bp parallel shift the "
+              f"desk {direction} {abs(dv01):,.0f} USD. "
               f"Swap is {itm_str} by {abs(ootm_bp):.1f}bp vs par.")
 
     print("\n-- EUR Swap Pricing --")
@@ -1232,17 +1283,18 @@ def main():
         kpar = par_swap_rate(spec["mat"], ANNUAL, eur_cs)
         npv  = price_swap(spec["notional"], spec["fixed"], spec["mat"],
                           ANNUAL, eur_cs, spec["position"])
-        dv01 = swap_dv01(spec["notional"], spec["mat"], ANNUAL, eur_pillars)
+        dv01 = swap_dv01(spec["notional"], spec["fixed"], spec["mat"],
+                         ANNUAL, eur_pillars, spec["position"])
         ootm_bp  = (kpar - spec["fixed"]) * 10000
-        direction = "gains" if npv > 0 else "loses"
+        direction = "gains" if dv01 > 0 else "loses"
         itm_str   = "ITM" if npv > 0 else "OTM"
         print(f"\n  {spec['label']}")
         print(f"    Par rate   : {kpar:.4%}")
         print(f"    Fixed rate : {spec['fixed']:.4%}")
         print(f"    NPV        : {npv:>12,.0f} EUR")
-        print(f"    DV01       : {dv01:>12,.0f} EUR/bp")
-        print(f"  [DESK VIEW] NPV = {npv:,.0f} EUR. Desk {direction} "
-              f"{dv01:,.0f} EUR per 1bp parallel shift. "
+        print(f"    DV01       : {dv01:>+12,.0f} EUR/bp")
+        print(f"  [DESK VIEW] NPV = {npv:,.0f} EUR. On a +1bp parallel shift the "
+              f"desk {direction} {abs(dv01):,.0f} EUR. "
               f"Swap is {itm_str} by {abs(ootm_bp):.1f}bp vs par.")
 
     # ─── SECTION 7 ───────────────────────────────────────────
@@ -1279,21 +1331,36 @@ def main():
     usd_slope = (usd_z10 - usd_z2) * 10000
     eur_slope = (eur_z10 - eur_z2) * 10000
 
+    usd_dv01_disp = abs(swap_dv01(10_000_000, par_swap_rate(10, SEMI, usd_cs),
+                                  10, SEMI,   usd_pillars, "payer"))
+    eur_dv01_disp = abs(swap_dv01(10_000_000, par_swap_rate(10, ANNUAL, eur_cs),
+                                  10, ANNUAL, eur_pillars, "payer"))
+
+    def shape_label(slope_bp):
+        if slope_bp < -5:
+            return "inverted"
+        if slope_bp > 5:
+            return "upward-sloping"
+        return "broadly flat"
+
     print(f"""
 [DESK VIEW — Cross-Currency Commentary]
-1. USD curve shape ({usd_slope:+.0f}bp 2Y-10Y slope): the inversion reflects the market
-   pricing multiple Fed cuts over the next 1-2 years, consistent with a peak
-   funds rate of ~5.3% and the expectation of a return toward neutral (~3.5-4%).
+1. USD curve shape ({usd_slope:+.0f}bp 2Y-10Y slope, {shape_label(usd_slope)}): the inversion
+   reflects the market pricing multiple Fed cuts over the next 1-2 years,
+   consistent with a peak funds rate of ~5.3% and the expectation of a return
+   toward neutral (~3.5-4%).
 
-2. EUR curve shape ({eur_slope:+.0f}bp 2Y-10Y slope): the mild upward slope signals the ECB
-   is near its terminal rate (~4%) but with fewer near-term cuts priced in than
-   the Fed — a shallower easing cycle expectation relative to the USD curve.
+2. EUR curve shape ({eur_slope:+.0f}bp 2Y-10Y slope, {shape_label(eur_slope)}): the front end is
+   modestly inverted as the market prices ECB cuts, while the 10Y-30Y segment
+   is mildly upward-sloping. The inversion is shallower than USD, consistent
+   with fewer near-term cuts priced for the ECB than the Fed.
 
-3. USD and EUR DV01 differ for the same 10M notional because the USD semi-annual
-   structure has more intermediate coupon cash flows (discounted at elevated
-   short rates under the inverted curve), concentrating duration at shorter
-   maturities and reducing the parallel-shift sensitivity vs EUR annual coupons
-   where cash flows are fewer but weighted more heavily at longer tenors.
+3. EUR 10Y swap DV01 ({eur_dv01_disp:,.0f}) exceeds USD ({usd_dv01_disp:,.0f}) for the same 10M
+   notional primarily because EUR zero rates are lower across the curve. Lower
+   rates produce larger discount factors, hence a larger fixed-leg annuity
+   sum(delta_i * P(0,t_i)), which is the first-order driver of swap DV01. The
+   semi-annual (USD) vs annual (EUR) coupon frequency is a second-order effect:
+   it changes the count of cash flows but barely the annuity integral.
 
 4. The EUR 10Y 3% coupon bond prices higher than its USD equivalent because
    the EUR 10Y discount rate is materially lower ({eur_10y_zero:.4%} vs {usd_10y_zero:.4%}),
