@@ -1,19 +1,26 @@
 """
 Yield Curve Construction and Rates Pricing — USD vs EUR
 ========================================================
-Reference date: 2024-01-15
 
 Demonstrates desk-level bootstrapping, interpolation, bond/swap pricing,
-and scenario analysis for both USD (SOFR-based) and EUR (ESTR-based) curves.
+and scenario analysis for both USD and EUR curves using real market data.
 
-Known implementation fixes applied (see FIX comments throughout):
-  FIX 1: 12Y/15Y pillars prevent flat-extrapolation bias in 20Y bootstrap
+Data sources (fetched by fetch_market_data.py):
+  USD: US Treasury constant-maturity par yields from FRED (11 tenors, 1M-30Y)
+       → bootstrapped into a zero-coupon curve
+  EUR: ECB AAA-rated euro area government zero-coupon rates (Svensson model)
+       → ingested directly as the zero curve (no bootstrap needed)
+
+Known implementation features:
+  FIX 1: Gap-filler pillars prevent flat-extrapolation bias in long-end bootstrap
   FIX 2: Correct modified duration conventions (semi-annual vs annual)
   FIX 3: Bootstrap verification is independent repricing, not replay
-  FIX 4: Log-linear interpolation over 6M->2Y gap (not flat extrapolation)
+  FIX 4: Log-linear interpolation over gaps (not flat extrapolation)
 """
 
 import os
+import csv
+import json
 import math
 import numpy as np
 import pandas as pd
@@ -35,71 +42,85 @@ plt.rcParams.update({
 })
 
 # ============================================================
-#  SECTION 0 — Configuration and Market Data
+#  SECTION 0 — Configuration and Data Loading
 # ============================================================
-# Financial motivation:
-#   All inputs to curve construction must be explicit and versioned.
-#   Hardcoded market data dated to a reference date prevents any
-#   accidental live-data dependency during audit or reproduction.
-#
-# Assumptions:
-#   Data is synthetic but calibrated to early-2024 conditions:
-#     USD: inverted curve (Fed terminal rate ~5.3%, long end ~4.1%)
-#     EUR: front-end inverted, then mildly rising at the long end
-#          (ESTR ~3.9%, 2Y-10Y slightly inverted ~-12bp, long end ~3.2%).
-#          This matches Jan-2024 ESTR OIS, which priced ECB cuts into the
-#          front end while the 10Y-30Y segment was modestly upward-sloping.
+# Data sources (real market data, fetched by fetch_market_data.py):
+#   USD: FRED Treasury CMT par yields → bootstrapped into zeros
+#        Short end (<=6M): simple interest (deposit-style)
+#        Long end (>=1Y): par coupon yields (semi-annual Treasury convention)
+#   EUR: ECB AAA govt zero-coupon rates (Svensson model)
+#        Annually compounded, converted to continuous for internal use.
+#        No bootstrap: these are fitted zero rates, ingested directly.
 # ============================================================
 
-REFERENCE_DATE = "2024-01-15"
+DATA_DIR = "data"
 
 ACT360 = 360
 ACT365 = 365
 SEMI   = 2      # semi-annual coupon frequency
 ANNUAL = 1      # annual coupon frequency
 
-# ── USD SOFR curve ──────────────────────────────────────────
-# Act/360 deposits; semi-annual swap fixed leg (Act/360 accrual)
-USD_DEPOSITS = {
-    1/12: 0.0531,   # 1M
-    3/12: 0.0533,   # 3M
-    6/12: 0.0530,   # 6M
-}
 
-USD_SWAPS = {
-    2:  0.0462,
-    3:  0.0440,
-    5:  0.0420,
-    7:  0.0415,
-    10: 0.0410,
-    12: 0.0405,
-    15: 0.0408,
-    20: 0.0412,
-    30: 0.0418,
-}
-# FIX 1: 12Y and 15Y pillars included to prevent flat extrapolation bias
-# during 20Y bootstrap. Without these, zero rate 20Y would be ~64bp above
-# the swap rate — a known failure mode of naive bootstrap.
+def load_csv_rates(filepath):
+    """Load a two-column CSV (maturity, rate) into a dict.
 
-# ── EUR ESTR curve ───────────────────────────────────────────
-# Act/360 deposits; annual swap fixed leg (Act/360 accrual)
-EUR_DEPOSITS = {
-    1/12: 0.0388,   # 1M
-    3/12: 0.0390,   # 3M
-    6/12: 0.0387,   # 6M
-}
+    Returns:
+        dict: {maturity_years (float): rate_decimal (float)}
+    """
+    if not os.path.exists(filepath):
+        raise FileNotFoundError(
+            f"Data file not found: {filepath}\n"
+            "Run 'python fetch_market_data.py' first to download real market data."
+        )
+    data = {}
+    with open(filepath) as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            mat = float(row["maturity"])
+            rate = float(row["rate"]) / 100.0    # percent → decimal
+            data[mat] = rate
+    return data
 
-EUR_SWAPS = {
-    2:  0.0325,
-    3:  0.0310,
-    5:  0.0305,
-    7:  0.0308,
-    10: 0.0312,
-    12: 0.0315,
-    15: 0.0318,
-    20: 0.0320,
-    30: 0.0322,
-}
+
+def load_metadata():
+    """Load fetch metadata (source, date) from data/metadata.json."""
+    path = os.path.join(DATA_DIR, "metadata.json")
+    if os.path.exists(path):
+        with open(path) as f:
+            return json.load(f)
+    return {"usd_date": "unknown", "eur_date": "unknown"}
+
+
+def load_usd_data():
+    """Load USD Treasury CMT yields and split into deposits / par yields.
+
+    Returns:
+        tuple: (deposits_dict, par_yields_dict)
+            deposits: {T: rate} for T <= 0.5Y (simple interest instruments)
+            par_yields: {T: rate} for T >= 1Y (semiannual coupon instruments)
+    """
+    all_rates = load_csv_rates(os.path.join(DATA_DIR, "usd_yields.csv"))
+    deposits   = {t: r for t, r in all_rates.items() if t <= 0.5}
+    par_yields = {t: r for t, r in all_rates.items() if t >= 1.0}
+    return deposits, par_yields
+
+
+def load_eur_data():
+    """Load EUR ECB AAA govt zero-coupon rates and convert to pillars.
+
+    ECB rates are annually compounded. Convert to discount factors:
+        P(0,T) = (1 + z_annual)^{-T}
+
+    Returns:
+        tuple: (pillars_dict, zeros_dict)
+            pillars: {T: discount_factor}
+            zeros: {T: z_annual} (annually compounded, for reference)
+    """
+    ecb_rates = load_csv_rates(os.path.join(DATA_DIR, "eur_zeros.csv"))
+    pillars = {}
+    for t, z_ann in ecb_rates.items():
+        pillars[t] = (1.0 + z_ann) ** (-t)
+    return pillars, ecb_rates
 
 
 # ============================================================
@@ -495,7 +516,7 @@ def fit_nelson_siegel(maturities, zeros, label=""):
     return b0, b1, b2, tau
 
 
-def plot_interpolation_comparison(usd_pillars, eur_pillars, usd_ns_params, eur_ns_params):
+def plot_interpolation_comparison(usd_pillars, eur_pillars, usd_ns_params, eur_ns_params, ref_date=""):
     """Plot all three interpolation methods for USD and EUR curves.
 
     Args:
@@ -510,8 +531,8 @@ def plot_interpolation_comparison(usd_pillars, eur_pillars, usd_ns_params, eur_n
     t_fine = np.linspace(min_mat, 30, 500)
 
     configs = [
-        (usd_pillars, usd_ns_params, "USD (SOFR)", "steelblue",   axes[0]),
-        (eur_pillars, eur_ns_params, "EUR (ESTR)", "darkorange",  axes[1]),
+        (usd_pillars, usd_ns_params, "USD (Treasury)", "steelblue",   axes[0]),
+        (eur_pillars, eur_ns_params, "EUR (Govt)", "darkorange",  axes[1]),
     ]
 
     for pillars, ns_params, label, color, ax in configs:
@@ -536,7 +557,7 @@ def plot_interpolation_comparison(usd_pillars, eur_pillars, usd_ns_params, eur_n
         ax.set_ylim(bottom=0)
 
     axes[1].set_xlabel("Maturity (years)")
-    plt.suptitle(f"Zero Curve Interpolation Methods (Ref: {REFERENCE_DATE})", y=1.01)
+    plt.suptitle(f"Zero Curve Interpolation Methods (Ref: {ref_date})", y=1.01)
     plt.tight_layout()
     plt.savefig("figures/01_zero_curves_interpolation.png", dpi=150, bbox_inches="tight")
     plt.close()
@@ -731,13 +752,12 @@ def print_bond_table(results, currency):
 #     DV01 = |V_swap(+1bp) - V_swap(-1bp)| / 2
 #
 # Assumptions:
-#   Single-curve framework. NOTE: this is exact, not a simplification, for the
-#   instruments used here. SOFR and ESTR swaps are OIS: the floating leg is
-#   indexed to the same overnight rate used for discounting, so the projection
-#   and discount curves coincide by construction. An OIS/IBOR basis would only
-#   arise for legs indexed to a term IBOR (e.g. 3M/6M EURIBOR), which are not
-#   priced here. DV01 below is a parallel zero-curve shift on the actual
-#   position (its contractual fixed rate), not an at-market proxy.
+#   Single-curve framework: the bootstrapped/ingested zero curve serves as
+#   both discount and projection curve. This is standard for government
+#   yield-based analysis and for OIS-indexed swaps. A discount/projection
+#   basis would only appear for legs indexed to a term IBOR
+#   (e.g. 3M/6M EURIBOR). DV01 below is a parallel zero-curve shift on
+#   the actual position (its contractual fixed rate), not an at-market proxy.
 # ============================================================
 
 def _df_from_cs(cs, t):
@@ -1066,7 +1086,7 @@ def print_comparison_table(usd_pillars, eur_pillars, usd_bond_10y, eur_bond_10y)
     print(pd.DataFrame(metrics).to_string(index=False))
 
 
-def plot_usd_eur_comparison(usd_pillars, eur_pillars):
+def plot_usd_eur_comparison(usd_pillars, eur_pillars, ref_date=""):
     """Plot USD vs EUR zero curves and the USD-EUR spread.
 
     Args:
@@ -1090,12 +1110,12 @@ def plot_usd_eur_comparison(usd_pillars, eur_pillars):
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
 
-    ax1.plot(t_fine, z_usd, "-", color="steelblue",  lw=2.2, label="USD (SOFR)")
-    ax1.plot(t_fine, z_eur, "-", color="darkorange",  lw=2.2, label="EUR (ESTR)")
+    ax1.plot(t_fine, z_usd, "-", color="steelblue",  lw=2.2, label="USD (Treasury)")
+    ax1.plot(t_fine, z_eur, "-", color="darkorange",  lw=2.2, label="EUR (Govt)")
     ax1.scatter(mats_u, [z * 100 for z in zeros_u], color="steelblue",  s=50, zorder=5)
     ax1.scatter(mats_e, [z * 100 for z in zeros_e], color="darkorange",  s=50, zorder=5)
     ax1.axhline(0, color="black", lw=0.5, ls=":")
-    ax1.set_title(f"USD vs EUR Zero Curves ({REFERENCE_DATE})")
+    ax1.set_title(f"USD vs EUR Zero Curves ({ref_date})")
     ax1.set_ylabel("Zero Rate (%)")
     ax1.legend()
     ax1.grid(True, alpha=0.3)
@@ -1139,33 +1159,45 @@ def section_header(n, title):
 
 def main():
     # ─── SECTION 0 ───────────────────────────────────────────
-    section_header(0, "Configuration and Market Data")
-    print(f"  Reference date : {REFERENCE_DATE}")
-    print(f"  USD deposits   : {len(USD_DEPOSITS)} instruments")
-    print(f"  USD swaps      : {len(USD_SWAPS)} instruments")
-    print(f"  EUR deposits   : {len(EUR_DEPOSITS)} instruments")
-    print(f"  EUR swaps      : {len(EUR_SWAPS)} instruments")
+    section_header(0, "Configuration and Data Loading")
+    meta = load_metadata()
+    ref_date = meta.get("usd_date", "unknown")
+    print(f"  USD data date  : {meta.get('usd_date', 'unknown')}")
+    print(f"  USD source     : {meta.get('usd_source', 'unknown')}")
+    print(f"  EUR data date  : {meta.get('eur_date', 'unknown')}")
+    print(f"  EUR source     : {meta.get('eur_source', 'unknown')}")
+
+    usd_deposits, usd_par_yields = load_usd_data()
+    eur_pillars, eur_raw_zeros   = load_eur_data()
+
+    print(f"  USD deposits   : {len(usd_deposits)} instruments (<=6M, simple interest)")
+    print(f"  USD par yields : {len(usd_par_yields)} instruments (>=1Y, semi-annual)")
+    print(f"  EUR ECB zeros  : {len(eur_raw_zeros)} tenors (AAA govt, Svensson)")
 
     # ─── SECTION 1 ───────────────────────────────────────────
-    section_header(1, "Deposit Bootstrap (0 to 6 months)")
-    print("\n-- USD Deposits --")
-    usd_dep = bootstrap_deposits(USD_DEPOSITS, ACT360)
-    print("\n-- EUR Deposits --")
-    eur_dep = bootstrap_deposits(EUR_DEPOSITS, ACT360)
+    section_header(1, "USD Deposit Bootstrap (short end)")
+    print("\n-- USD Deposits (Treasury bills / short CMT, simple interest) --")
+    usd_dep = bootstrap_deposits(usd_deposits, ACT360)
 
     # ─── SECTION 2 ───────────────────────────────────────────
-    section_header(2, "Swap Bootstrap (2Y to 30Y)")
-    print("\n-- USD Swaps (semi-annual, Act/360) --")
-    usd_pillars = bootstrap_swaps(USD_SWAPS, usd_dep, SEMI, ACT360)
-    print("\n-- EUR Swaps (annual, Act/360) --")
-    eur_pillars = bootstrap_swaps(EUR_SWAPS, eur_dep, ANNUAL, ACT360)
+    section_header(2, "USD Par-Yield Bootstrap (1Y to 30Y)")
+    print("\n-- USD Treasury par yields (semi-annual coupon convention) --")
+    usd_pillars = bootstrap_swaps(usd_par_yields, usd_dep, SEMI, ACT360)
+
+    print("\n-- EUR Curve (ECB AAA Govt zero-coupon rates, ingested directly) --")
+    eur_mats_raw = sorted(eur_raw_zeros.keys())
+    print(f"  {'Maturity':>8}  {'Zero (ann)':>10}  {'Zero (cc)':>10}  {'DF':>10}")
+    for m in eur_mats_raw:
+        z_ann = eur_raw_zeros[m]
+        z_cc  = math.log(1.0 + z_ann)
+        df    = eur_pillars[m]
+        print(f"  {m:>8.2f}Y  {z_ann:>10.4%}  {z_cc:>10.4%}  {df:>10.6f}")
 
     # ─── SECTION 3 ───────────────────────────────────────────
-    section_header(3, "Bootstrap Verification (Independent Repricing)")
-    print("\n-- USD Verification --")
-    verify_bootstrap(usd_pillars, USD_SWAPS, SEMI)
-    print("\n-- EUR Verification --")
-    verify_bootstrap(eur_pillars, EUR_SWAPS, ANNUAL)
+    section_header(3, "Bootstrap Verification (USD only)")
+    print("\n-- USD Verification (independent repricing of par yields) --")
+    verify_bootstrap(usd_pillars, usd_par_yields, SEMI)
+    print("\n  EUR: no bootstrap to verify — ECB spot rates ingested directly.")
 
     # ─── SECTION 4 ───────────────────────────────────────────
     section_header(4, "Interpolation Methods")
@@ -1179,7 +1211,7 @@ def main():
     print("\n-- EUR Nelson-Siegel Fit --")
     eur_ns = fit_nelson_siegel(eur_mats, eur_zeros, "EUR")
 
-    plot_interpolation_comparison(usd_pillars, eur_pillars, usd_ns, eur_ns)
+    plot_interpolation_comparison(usd_pillars, eur_pillars, usd_ns, eur_ns, ref_date)
 
     # Reference interpolators for all subsequent pricing
     usd_cs = build_cubic_spline(usd_mats, usd_zeros)
@@ -1322,7 +1354,7 @@ def main():
     print("\n-- Cross-Currency Metrics Table --")
     print_comparison_table(usd_pillars, eur_pillars, usd_10y, eur_10y)
 
-    plot_usd_eur_comparison(usd_pillars, eur_pillars)
+    plot_usd_eur_comparison(usd_pillars, eur_pillars, ref_date)
 
     usd_z2  = -math.log(usd_pillars[2])  / 2
     usd_z10 = -math.log(usd_pillars[10]) / 10
