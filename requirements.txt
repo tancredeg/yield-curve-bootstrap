@@ -1,7 +1,0 @@
-# Runtime dependencies. Lower bounds chosen for portability: the code uses no
-# API newer than these, so it installs and runs on essentially any machine from
-# 2023 onward. Pin exact versions only if bit-for-bit reproducibility is required.
-numpy>=1.24
-scipy>=1.10
-pandas>=2.0
-matplotlib>=3.7

@@ -1,8 +1,0 @@
-﻿{
-  "version": "0.2.0",
-  "configurations": [
-    { "name": "Run yield_curve.py", "type": "debugpy", "request": "launch",
-      "program": "${workspaceFolder}/yield_curve.py", "console": "integratedTerminal",
-      "cwd": "${workspaceFolder}" }
-  ]
-}

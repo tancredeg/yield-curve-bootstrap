@@ -1,7 +1,0 @@
-{
-  "usd_source": "US Treasury CMT (home.treasury.gov)",
-  "usd_date": "2026-06-02",
-  "eur_source": "ECB AAA Govt zero-coupon (Svensson)",
-  "eur_date": "2026-06-02",
-  "fetch_timestamp": "2026-06-03T12:40:35.514832"
-}

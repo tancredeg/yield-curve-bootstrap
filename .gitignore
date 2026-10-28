@@ -1,4 +1,17 @@
-﻿.venv/
+# environments and caches
+.venv/
+venv/
 __pycache__/
-.pytest_cache/
 *.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+*.egg-info/
+build/
+dist/
+.ipynb_checkpoints/
+# raw downloads (data/sample/ is the versioned snapshot)
+data/raw/
