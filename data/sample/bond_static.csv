@@ -1,0 +1,14 @@
+isin,description,interest_start,first_coupon,method,borsaitaliana_interest_commencement
+DE000BU22114,BKO 2 12/16/27,2025-10-16,2026-12-16,inferred from Bundesbank accrued interest and yields,
+DE000BU22122,BKO 2.1 03/15/28,2026-01-29,2027-03-15,inferred from Bundesbank accrued interest and yields,
+DE000BU22130,BKO 2.5 06/14/28,2026-04-23,2027-06-14,inferred from Bundesbank accrued interest and yields,
+DE000BU22148,BKO 2.7 09/13/28,2026-07-16,2027-09-13,inferred from Bundesbank accrued interest and yields,
+DE000BU22155,BKO 3 12/13/28,2026-10-08,2027-12-13,inferred from Bundesbank accrued interest and yields,
+DE000BU25059,OBL 2.2 10/10/30 192,2025-07-10,2026-10-10,inferred from Bundesbank accrued interest and yields,
+DE000BU25067,OBL 2.5 04/16/31 193,2026-01-15,2027-04-16,inferred from Bundesbank accrued interest and yields,
+DE000BU25075,OBL 2.9 10/08/31 194,2026-07-23,2027-10-08,inferred from Bundesbank accrued interest and yields,
+DE000BU27014,DBR 2.5 11/15/32,2025-08-29,2026-11-15,inferred from Bundesbank accrued interest and yields,
+DE000BU27022,DBR 3.3 11/15/33,2026-10-09,2027-11-15,inferred from Bundesbank accrued interest and yields,
+DE000BU2T000,DBR 3.4 05/15/47,2026-02-03,2027-05-15,inferred from Bundesbank accrued interest and yields,
+DE000BU2Z064,DBR 2.9 02/15/36,2026-01-09,2027-02-15,inferred from Bundesbank accrued interest and yields,2026-01-09
+DE000BU2Z072,DBR 3 08/15/36,2026-07-10,2027-08-15,inferred from Bundesbank accrued interest and yields,2026-07-10

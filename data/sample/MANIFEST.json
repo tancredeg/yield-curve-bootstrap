@@ -1,0 +1,57 @@
+{
+  "asof": "2026-10-27",
+  "history_start": "2023-01-01",
+  "frozen_utc": "2026-10-28T14:41:07+00:00",
+  "fetched_utc": "2026-10-28T14:21:44+00:00",
+  "files": {
+    "ust_par_yields.csv": {
+      "sha256": "dc56c34f743e5a4c7e1db424a63777f5429c9e758291bdd4a741d517db39f588",
+      "rows": 955,
+      "description": "US Treasury daily par yield curve, percent, bond-equivalent (semiannual) basis"
+    },
+    "ecb_aaa_spot.csv": {
+      "sha256": "9874d7831b0c6d16c85fd9a531b5aa6bfb4c77680763d8d67ce4a652188c5019",
+      "rows": 975,
+      "description": "ECB AAA euro area government spot rates, percent, Svensson model, continuous compounding (provider id SV_C_YM)"
+    },
+    "estr.csv": {
+      "sha256": "494676128a1d5aa11bb454aa27f74047a90a70acab3598c4abe15a4a55291ac1",
+      "rows": 976,
+      "description": "Euro short-term rate, volume-weighted trimmed mean, percent, ACT/360"
+    },
+    "bundesbank_federal_securities.csv": {
+      "sha256": "fec3b59e82e8515eacc8bd8ad0095006374e21847bfe9c084dcc1ae5f6ac39ef",
+      "rows": 1516,
+      "description": "Bundesbank reference prices (around noon, Frankfurt) and yields of listed Federal securities; clean and dirty price per 100, yield in percent"
+    },
+    "bond_static.csv": {
+      "sha256": "9e6c04377068ae5c3ac2fb2cf429dcb595fc0fd5f772f2f5643ecd2746f5e09d",
+      "rows": 13,
+      "description": "Irregular first coupon periods inferred from the Bundesbank accrued interest and yields; commencement dates cross-checked against Borsa Italiana where available"
+    },
+    "eurex_fgbl_daily.csv": {
+      "sha256": "f7445e352b56e77b40f19714cf3ed6225937e91389efd86aa0ec9d561a9f6ead",
+      "rows": 60,
+      "description": "Eurex Euro-Bund futures daily statistics: daily settlement price, OHLC, volume, open interest; contract = last trading day code"
+    },
+    "eurex_deliverable_bonds.csv": {
+      "sha256": "74fcd11e3e269514f64362490ecf2f24d9e7909a6a649456533be5f35d8e33c7",
+      "rows": 43,
+      "description": "Eurex deliverable bonds and published conversion factors (FGBS, FGBM, FGBL, FGBX)"
+    }
+  },
+  "sources": [
+    "Borsa Italiana: https://www.borsaitaliana.it/borsa/obbligazioni/mot/euro-obbligazioni/scheda/DE000BU2Z056-MOTX.html?lang=en",
+    "Borsa Italiana: https://www.borsaitaliana.it/borsa/obbligazioni/mot/euro-obbligazioni/scheda/DE000BU2Z064-MOTX.html?lang=en",
+    "Borsa Italiana: https://www.borsaitaliana.it/borsa/obbligazioni/mot/euro-obbligazioni/scheda/DE000BU2Z072-MOTX.html?lang=en",
+    "Deutsche Bundesbank: https://www.bundesbank.de/dynamic/action/en/service/federal-securities/prices-and-yields/810710/prices-and-yields-of-listed-federal-securities",
+    "ECB Data API: https://data-api.ecb.europa.eu/service/data/EST/B.EU000A2X2A25.WT?format=csvdata&startPeriod=2023-01-01&endPeriod=2026-10-27&detail=dataonly",
+    "ECB Data API: https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_3M+SR_6M+SR_1Y+SR_2Y+SR_3Y+SR_5Y+SR_7Y+SR_10Y+SR_15Y+SR_20Y+SR_30Y?format=csvdata&startPeriod=2023-01-01&endPeriod=2026-10-27&detail=dataonly",
+    "Eurex: https://www.eurex.com/ex-en/data/clearing-files/notified-deliverable-bonds-conversion-factors",
+    "US Treasury: https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/2023/all?type=daily_treasury_yield_curve&field_tdr_date_value=2023&page&_format=csv",
+    "US Treasury: https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/2024/all?type=daily_treasury_yield_curve&field_tdr_date_value=2024&page&_format=csv",
+    "US Treasury: https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/2025/all?type=daily_treasury_yield_curve&field_tdr_date_value=2025&page&_format=csv",
+    "US Treasury: https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/2026/all?type=daily_treasury_yield_curve&field_tdr_date_value=2026&page&_format=csv",
+    "Eurex: https://www.eurex.com/api/v1/overallstatistics/34656?busdate=YYYYMMDD&filtertype=overview"
+  ]
+}
