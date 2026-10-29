@@ -45,7 +45,8 @@ class CalibratedMarket:
 
     ``quotes`` are the instruments' quoted rates (decimal): ICMA yields for
     bonds, par yields for the Treasury curve. ``rebuild(i, bp)`` recalibrates
-    with quote ``i`` moved by ``bp`` basis points (used for bucketed DV01).
+    with quote ``i`` moved by ``bp`` basis points (used for bucketed DV01);
+    ``rebuild_all(bp)`` moves every quote by ``bp`` at once.
     """
 
     curve: DiscountCurve
@@ -56,6 +57,7 @@ class CalibratedMarket:
     rebuild: Callable[[int, float], DiscountCurve] = field(repr=False)
     settle: date | None = None
     instruments: pd.DataFrame | None = field(default=None, repr=False)
+    rebuild_all: Callable[[float], DiscountCurve] | None = field(default=None, repr=False)
 
 
 def _continuous(rates: ArrayLike, frequency: int) -> np.ndarray:
@@ -84,7 +86,10 @@ def build_usd_curve(day: date, method: str, sample_dir: Path = SAMPLE_DIR) -> Ca
         bumped[i] += bp * 1e-4
         return build(bumped, curve.zeros)[0]
 
-    return CalibratedMarket(curve, labels, rates, tenors, residuals, rebuild)
+    def rebuild_all(bp: float) -> DiscountCurve:
+        return build(rates + bp * 1e-4, curve.zeros)[0]
+
+    return CalibratedMarket(curve, labels, rates, tenors, residuals, rebuild, rebuild_all=rebuild_all)
 
 
 def eligible_bunds(day: date, sample_dir: Path = SAMPLE_DIR) -> pd.DataFrame:
@@ -132,8 +137,12 @@ def build_eur_curve(
         bumped[i] = dirty_from_yield(bonds[i], ytm[i] + bp * 1e-4, settle)
         return calibrate(pricers, bumped, taus, method, res.curve.zeros, label="EUR Bund").curve
 
+    def rebuild_all(bp: float) -> DiscountCurve:
+        bumped = np.array([dirty_from_yield(b, y + bp * 1e-4, settle) for b, y in zip(bonds, ytm)])
+        return calibrate(pricers, bumped, taus, method, res.curve.zeros, label="EUR Bund").curve
+
     return CalibratedMarket(
-        res.curve, [str(d) for d in sel["description"]], ytm, taus, res.residuals, rebuild, settle, sel
+        res.curve, [str(d) for d in sel["description"]], ytm, taus, res.residuals, rebuild, settle, sel, rebuild_all
     )
 
 
