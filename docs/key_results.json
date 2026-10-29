@@ -1,0 +1,746 @@
+{
+ "asof": "2026-10-27",
+ "validation": {
+  "bundesbank_quotes": 1459,
+  "bundesbank_days": 19,
+  "bundesbank_securities": 78,
+  "max_accrued_error_per_100": 5.9e-14,
+  "max_yield_error_bp": 5e-05,
+  "eurex_cf_total": 43,
+  "eurex_cf_matched": 43,
+  "eurex_products": [
+   "FGBL",
+   "FGBM",
+   "FGBS",
+   "FGBX"
+  ]
+ },
+ "r1": {
+  "USD": {
+   "instruments": 14,
+   "t_max": 30.0,
+   "max_zero_spread_bp": 9.9,
+   "max_forward_spread_bp": 93.0,
+   "forward_window_spread_bp": {
+    "5y5y": 0.2,
+    "10y10y": 4.2,
+    "15y5y": 28.5
+   },
+   "widest_window": "15y5y",
+   "methods": {
+    "monotone_convex": {
+     "repricing_error_bp": 6e-12,
+     "forward_min_pct": 4.087,
+     "forward_max_pct": 6.094,
+     "max_forward_jump_bp": 0.0,
+     "fwd_5y5y_pct": 5.144,
+     "fwd_10y10y_pct": 5.859,
+     "fwd_15y5y_pct": 5.85
+    },
+    "log_linear_df": {
+     "repricing_error_bp": 6e-12,
+     "forward_min_pct": 4.093,
+     "forward_max_pct": 5.857,
+     "max_forward_jump_bp": 80.9,
+     "fwd_5y5y_pct": 5.143,
+     "fwd_10y10y_pct": 5.857,
+     "fwd_15y5y_pct": 5.857
+    },
+    "linear_zero": {
+     "repricing_error_bp": 6e-12,
+     "forward_min_pct": 4.093,
+     "forward_max_pct": 6.37,
+     "max_forward_jump_bp": 120.4,
+     "fwd_5y5y_pct": 5.145,
+     "fwd_10y10y_pct": 5.899,
+     "fwd_15y5y_pct": 6.135
+    },
+    "natural_cubic_zero": {
+     "repricing_error_bp": 6e-12,
+     "forward_min_pct": 4.068,
+     "forward_max_pct": 6.196,
+     "max_forward_jump_bp": 2.4,
+     "fwd_5y5y_pct": 5.144,
+     "fwd_10y10y_pct": 5.898,
+     "fwd_15y5y_pct": 6.131
+    }
+   }
+  },
+  "EUR": {
+   "instruments": 15,
+   "t_max": 29.82,
+   "max_zero_spread_bp": 5.7,
+   "max_forward_spread_bp": 25.0,
+   "forward_window_spread_bp": {
+    "5y5y": 0.6,
+    "10y10y": 0.3,
+    "15y5y": 2.3
+   },
+   "widest_window": "15y5y",
+   "methods": {
+    "monotone_convex": {
+     "repricing_error_bp": 1.7e-12,
+     "forward_min_pct": 2.843,
+     "forward_max_pct": 4.171,
+     "max_forward_jump_bp": 0.0,
+     "fwd_5y5y_pct": 3.518,
+     "fwd_10y10y_pct": 4.009,
+     "fwd_15y5y_pct": 3.9,
+     "oos_rms_bp": 2.94,
+     "oos_n": 49
+    },
+    "log_linear_df": {
+     "repricing_error_bp": 0.0,
+     "forward_min_pct": 2.9,
+     "forward_max_pct": 4.148,
+     "max_forward_jump_bp": 38.1,
+     "fwd_5y5y_pct": 3.524,
+     "fwd_10y10y_pct": 4.006,
+     "fwd_15y5y_pct": 3.911,
+     "oos_rms_bp": 3.49,
+     "oos_n": 49
+    },
+    "linear_zero": {
+     "repricing_error_bp": 0.0,
+     "forward_min_pct": 2.9,
+     "forward_max_pct": 4.3,
+     "max_forward_jump_bp": 47.0,
+     "fwd_5y5y_pct": 3.523,
+     "fwd_10y10y_pct": 4.008,
+     "fwd_15y5y_pct": 3.921,
+     "oos_rms_bp": 3.44,
+     "oos_n": 49
+    },
+    "natural_cubic_zero": {
+     "repricing_error_bp": 0.0,
+     "forward_min_pct": 2.9,
+     "forward_max_pct": 4.203,
+     "max_forward_jump_bp": 13.6,
+     "fwd_5y5y_pct": 3.519,
+     "fwd_10y10y_pct": 4.008,
+     "fwd_15y5y_pct": 3.898,
+     "oos_rms_bp": 3.48,
+     "oos_n": 49
+    }
+   }
+  },
+  "continuous_forward_schemes": [
+   "monotone_convex"
+  ],
+  "max_repricing_error_bp": 6e-12,
+  "best_oos": "monotone_convex"
+ },
+ "r2": {
+  "bullet": {
+   "positions": [
+    {
+     "isin": "DE000BU2Z072",
+     "description": "DBR 3 08/15/36",
+     "nominal_mn": 100.0
+    }
+   ],
+   "market_value_mn": 98.002,
+   "dv01_k": 83.65,
+   "krd_k": {
+    "1": 0.36,
+    "2": 0.56,
+    "3": 1.35,
+    "5": 2.55,
+    "7": 8.98,
+    "10": 69.84,
+    "15": 0.0,
+    "20": 0.0,
+    "30": 0.0
+   },
+   "krd_sum_k": 83.65,
+   "convexity": 79.5,
+   "irrbb_pnl_mn": {
+    "parallel_up": -16.98,
+    "parallel_down": 20.94,
+    "steepener": -10.6,
+    "flattener": 6.68,
+    "short_up": -3.13,
+    "short_down": 3.24
+   },
+   "krd_10y_share_pct": 83.5
+  },
+  "barbell": {
+   "positions": [
+    {
+     "isin": "DE000BU22148",
+     "description": "BKO 2.7 09/13/28",
+     "nominal_mn": 60.22
+    },
+    {
+     "isin": "DE000BU2D012",
+     "description": "DBR 2.9 08/15/56",
+     "nominal_mn": 43.62
+    }
+   ],
+   "market_value_mn": 98.002,
+   "dv01_k": 83.65,
+   "krd_k": {
+    "1": 1.66,
+    "2": 9.85,
+    "3": 0.57,
+    "5": 1.08,
+    "7": 1.82,
+    "10": 3.73,
+    "15": 5.5,
+    "20": 10.0,
+    "30": 49.45
+   },
+   "krd_sum_k": 83.65,
+   "convexity": 188.2,
+   "irrbb_pnl_mn": {
+    "parallel_up": -14.97,
+    "parallel_down": 24.61,
+    "steepener": -9.09,
+    "flattener": 8.04,
+    "short_up": -2.95,
+    "short_down": 3.07
+   },
+   "krd_wings_share_pct": 70.9
+  },
+  "keys": [
+   1,
+   2,
+   3,
+   5,
+   7,
+   10,
+   15,
+   20,
+   30
+  ],
+  "bucketed_bullet": {
+   "monotone_convex": {
+    "by_quote_k": {
+     "OBL 1.3 10/15/27 186": -0.02,
+     "OBL 2.4 10/19/28 188": -0.118,
+     "OBL 2.5 10/11/29 190": -0.274,
+     "OBL 2.2 10/10/30 192": -0.195,
+     "OBL 2.9 10/08/31 194": -0.202,
+     "DBR 2.5 11/15/32": -0.793,
+     "DBR 2.6 08/15/33": 0.118,
+     "DBR 2.6 08/15/34": -4.871,
+     "DBR 2.6 08/15/35": 22.652,
+     "DBR 4 01/04/37": 70.591,
+     "DBR 1 05/15/38": -5.911,
+     "DBR 2.6 05/15/41 TWIN": -0.009,
+     "DBR 2.5 08/15/46": 0.0,
+     "DBR 1.8 08/15/53 TWIN": 0.0,
+     "DBR 2.9 08/15/56": 0.0
+    },
+    "sum_k": 80.97,
+    "bracket": [
+     "DBR 2.6 08/15/35",
+     "DBR 4 01/04/37"
+    ],
+    "share_bracket_pct": 88.2,
+    "share_four_nearest_pct": 98.4,
+    "sign_changes": 4,
+    "sum_1bp_k": 83.24,
+    "joint_1bp_k": 80.97,
+    "gap_1bp_pct": 2.81
+   },
+   "log_linear_df": {
+    "by_quote_k": {
+     "OBL 1.3 10/15/27 186": -0.013,
+     "OBL 2.4 10/19/28 188": -0.098,
+     "OBL 2.5 10/11/29 190": -0.124,
+     "OBL 2.2 10/10/30 192": -0.179,
+     "OBL 2.9 10/08/31 194": -0.173,
+     "DBR 2.5 11/15/32": -0.602,
+     "DBR 2.6 08/15/33": 0.031,
+     "DBR 2.6 08/15/34": -0.362,
+     "DBR 2.6 08/15/35": 19.566,
+     "DBR 4 01/04/37": 62.912,
+     "DBR 1 05/15/38": 0.0,
+     "DBR 2.6 05/15/41 TWIN": 0.0,
+     "DBR 2.5 08/15/46": 0.0,
+     "DBR 1.8 08/15/53 TWIN": 0.0,
+     "DBR 2.9 08/15/56": 0.0
+    },
+    "sum_k": 80.96,
+    "bracket": [
+     "DBR 2.6 08/15/35",
+     "DBR 4 01/04/37"
+    ],
+    "share_bracket_pct": 98.1,
+    "share_four_nearest_pct": 98.5,
+    "sign_changes": 3,
+    "sum_1bp_k": 80.96,
+    "joint_1bp_k": 80.96,
+    "gap_1bp_pct": 0.0
+   },
+   "linear_zero": {
+    "by_quote_k": {
+     "OBL 1.3 10/15/27 186": -0.026,
+     "OBL 2.4 10/19/28 188": -0.094,
+     "OBL 2.5 10/11/29 190": -0.121,
+     "OBL 2.2 10/10/30 192": -0.172,
+     "OBL 2.9 10/08/31 194": -0.153,
+     "DBR 2.5 11/15/32": -0.596,
+     "DBR 2.6 08/15/33": 0.003,
+     "DBR 2.6 08/15/34": -0.345,
+     "DBR 2.6 08/15/35": 21.886,
+     "DBR 4 01/04/37": 60.579,
+     "DBR 1 05/15/38": 0.0,
+     "DBR 2.6 05/15/41 TWIN": 0.0,
+     "DBR 2.5 08/15/46": 0.0,
+     "DBR 1.8 08/15/53 TWIN": 0.0,
+     "DBR 2.9 08/15/56": 0.0
+    },
+    "sum_k": 80.96,
+    "bracket": [
+     "DBR 2.6 08/15/35",
+     "DBR 4 01/04/37"
+    ],
+    "share_bracket_pct": 98.2,
+    "share_four_nearest_pct": 98.6,
+    "sign_changes": 3,
+    "sum_1bp_k": 80.96,
+    "joint_1bp_k": 80.96,
+    "gap_1bp_pct": 0.0
+   },
+   "natural_cubic_zero": {
+    "by_quote_k": {
+     "OBL 1.3 10/15/27 186": -0.04,
+     "OBL 2.4 10/19/28 188": -0.132,
+     "OBL 2.5 10/11/29 190": -0.174,
+     "OBL 2.2 10/10/30 192": -0.306,
+     "OBL 2.9 10/08/31 194": -0.169,
+     "DBR 2.5 11/15/32": -1.328,
+     "DBR 2.6 08/15/33": 2.557,
+     "DBR 2.6 08/15/34": -10.291,
+     "DBR 2.6 08/15/35": 27.322,
+     "DBR 4 01/04/37": 70.261,
+     "DBR 1 05/15/38": -7.319,
+     "DBR 2.6 05/15/41 TWIN": 0.662,
+     "DBR 2.5 08/15/46": -0.085,
+     "DBR 1.8 08/15/53 TWIN": 0.023,
+     "DBR 2.9 08/15/56": -0.01
+    },
+    "sum_k": 80.97,
+    "bracket": [
+     "DBR 2.6 08/15/35",
+     "DBR 4 01/04/37"
+    ],
+    "share_bracket_pct": 80.9,
+    "share_four_nearest_pct": 95.5,
+    "sign_changes": 8,
+    "sum_1bp_k": 80.97,
+    "joint_1bp_k": 80.97,
+    "gap_1bp_pct": 0.0
+   }
+  },
+  "bucket_bp": 0.01,
+  "bullet_yield_pct": 3.352,
+  "zero_dv01_over_1py_k": 80.94
+ },
+ "r3": {
+  "USD": {
+   "tenors": [
+    "3M",
+    "6M",
+    "1Y",
+    "2Y",
+    "3Y",
+    "5Y",
+    "7Y",
+    "10Y",
+    "20Y",
+    "30Y"
+   ],
+   "start": "2023-01-04",
+   "end": "2026-10-27",
+   "n_obs": 954,
+   "explained_pct": [
+    83.0,
+    10.7,
+    2.9
+   ],
+   "cumulative_pct": 96.6,
+   "pc_daily_sd_bp": [
+    16.15,
+    5.8,
+    3.01
+   ],
+   "subperiod_explained_pct": [
+    [
+     83.3,
+     10.5,
+     3.0
+    ],
+    [
+     82.8,
+     11.0,
+     2.6
+    ]
+   ],
+   "subperiod_loading_similarity": [
+    0.995,
+    0.982,
+    0.986
+   ],
+   "least_stable_pc": 2,
+   "loadings": [
+    [
+     0.0704,
+     0.1404,
+     0.2694,
+     0.3933,
+     0.4034,
+     0.4016,
+     0.3848,
+     0.3453,
+     0.2912,
+     0.2684
+    ],
+    [
+     -0.1675,
+     -0.2963,
+     -0.438,
+     -0.3756,
+     -0.2135,
+     -0.0012,
+     0.1545,
+     0.2747,
+     0.4281,
+     0.4722
+    ],
+    [
+     -0.7255,
+     -0.4452,
+     -0.1695,
+     0.2084,
+     0.2763,
+     0.1614,
+     0.0835,
+     -0.0353,
+     -0.1874,
+     -0.2398
+    ]
+   ]
+  },
+  "EUR": {
+   "tenors": [
+    "3M",
+    "6M",
+    "1Y",
+    "2Y",
+    "3Y",
+    "5Y",
+    "7Y",
+    "10Y",
+    "15Y",
+    "20Y",
+    "30Y"
+   ],
+   "start": "2023-01-03",
+   "end": "2026-10-27",
+   "n_obs": 974,
+   "explained_pct": [
+    80.6,
+    10.8,
+    4.7
+   ],
+   "cumulative_pct": 96.2,
+   "pc_daily_sd_bp": [
+    13.29,
+    4.87,
+    3.22
+   ],
+   "subperiod_explained_pct": [
+    [
+     81.1,
+     10.6,
+     4.2
+    ],
+    [
+     79.7,
+     11.4,
+     5.9
+    ]
+   ],
+   "subperiod_loading_similarity": [
+    0.998,
+    0.991,
+    0.983
+   ],
+   "least_stable_pc": 3,
+   "loadings": [
+    [
+     0.0394,
+     0.116,
+     0.2351,
+     0.3438,
+     0.3679,
+     0.3622,
+     0.3533,
+     0.3465,
+     0.3375,
+     0.3237,
+     0.2854
+    ],
+    [
+     -0.3614,
+     -0.4093,
+     -0.4164,
+     -0.3301,
+     -0.2313,
+     -0.0691,
+     0.0468,
+     0.1637,
+     0.2767,
+     0.3368,
+     0.3772
+    ],
+    [
+     -0.6509,
+     -0.4175,
+     -0.0382,
+     0.2905,
+     0.3173,
+     0.1891,
+     0.0732,
+     -0.0403,
+     -0.1521,
+     -0.2245,
+     -0.315
+    ]
+   ]
+  }
+ },
+ "r4": {
+  "asof": "2026-10-27",
+  "contract": "FGBL Dec 2026",
+  "delivery": "2026-12-10",
+  "spot_settlement": "2026-10-29",
+  "days": 42,
+  "futures_settlement": 122.09,
+  "estr_pct": 2.44,
+  "open_interest": 1926477,
+  "basket": [
+   {
+    "isin": "DE000BU2Z056",
+    "description": "DBR 2.6 08/15/35",
+    "cf": 0.774902,
+    "cf_eurex": 0.774902,
+    "clean": 94.62,
+    "yield_pct": 3.314,
+    "duration_mod": 7.65,
+    "gross_basis_cents": 1.2,
+    "carry_cents": 2.8,
+    "net_basis_cents": -1.6,
+    "implied_repo_pct": 2.58,
+    "ctd": true
+   },
+   {
+    "isin": "DE000BU2Z064",
+    "description": "DBR 2.9 02/15/36",
+    "cf": 0.785735,
+    "cf_eurex": 0.785735,
+    "clean": 96.58,
+    "yield_pct": 3.332,
+    "duration_mod": 7.81,
+    "gross_basis_cents": 65.0,
+    "carry_cents": 5.2,
+    "net_basis_cents": 59.7,
+    "implied_repo_pct": -2.74,
+    "ctd": false
+   },
+   {
+    "isin": "DE000BU2Z072",
+    "description": "DBR 3 08/15/36",
+    "cf": 0.784157,
+    "cf_eurex": 0.784157,
+    "clean": 97.09,
+    "yield_pct": 3.352,
+    "duration_mod": 8.26,
+    "gross_basis_cents": 135.2,
+    "carry_cents": 6.6,
+    "net_basis_cents": 128.6,
+    "implied_repo_pct": -8.81,
+    "ctd": false
+   }
+  ],
+  "ctd": "DBR 2.6 08/15/35",
+  "ctd_isin": "DE000BU2Z056",
+  "ctd_margin_vs_next_pct": 5.32,
+  "irr_pp_per_10_cents": 0.7,
+  "switch": {
+   "shift_bp": 216.1,
+   "from": "DBR 2.6 08/15/35",
+   "to": "DBR 2.9 02/15/36",
+   "ctd_yield_at_switch_pct": 5.48
+  },
+  "contract_dv01_eur": 94.22,
+  "bullet_hedge_contracts": 887.9,
+  "history_start": "2026-10-01",
+  "history_end": "2026-10-27",
+  "history_days": 19,
+  "history_ctd_unique": [
+   "DBR 2.6 08/15/35"
+  ],
+  "irr_minus_estr_mean_pct": -0.27,
+  "irr_minus_estr_sd_pct": 1.38,
+  "irr_minus_estr_min_pct": -2.02,
+  "irr_minus_estr_max_pct": 2.82,
+  "history": [
+   {
+    "date": "2026-10-01",
+    "futures": 120.35,
+    "estr_pct": 2.442,
+    "ctd": "DBR 2.6 08/15/35",
+    "ctd_implied_repo_pct": 5.265,
+    "ctd_net_basis_cents": -48.24
+   },
+   {
+    "date": "2026-10-02",
+    "futures": 121.06,
+    "estr_pct": 2.44,
+    "ctd": "DBR 2.6 08/15/35",
+    "ctd_implied_repo_pct": 0.953,
+    "ctd_net_basis_cents": 25.36
+   },
+   {
+    "date": "2026-10-05",
+    "futures": 120.73,
+    "estr_pct": 2.438,
+    "ctd": "DBR 2.6 08/15/35",
+    "ctd_implied_repo_pct": 0.416,
+    "ctd_net_basis_cents": 33.9
+   },
+   {
+    "date": "2026-10-06",
+    "futures": 120.9,
+    "estr_pct": 2.439,
+    "ctd": "DBR 2.6 08/15/35",
+    "ctd_implied_repo_pct": 1.542,
+    "ctd_net_basis_cents": 14.79
+   },
+   {
+    "date": "2026-10-07",
+    "futures": 120.81,
+    "estr_pct": 2.439,
+    "ctd": "DBR 2.6 08/15/35",
+    "ctd_implied_repo_pct": 2.516,
+    "ctd_net_basis_cents": -1.25
+   },
+   {
+    "date": "2026-10-08",
+    "futures": 120.67,
+    "estr_pct": 2.439,
+    "ctd": "DBR 2.6 08/15/35",
+    "ctd_implied_repo_pct": 2.583,
+    "ctd_net_basis_cents": -2.22
+   },
+   {
+    "date": "2026-10-09",
+    "futures": 120.84,
+    "estr_pct": 2.437,
+    "ctd": "DBR 2.6 08/15/35",
+    "ctd_implied_repo_pct": 1.464,
+    "ctd_net_basis_cents": 14.77
+   },
+   {
+    "date": "2026-10-12",
+    "futures": 120.96,
+    "estr_pct": 2.439,
+    "ctd": "DBR 2.6 08/15/35",
+    "ctd_implied_repo_pct": 1.931,
+    "ctd_net_basis_cents": 7.59
+   },
+   {
+    "date": "2026-10-13",
+    "futures": 121.09,
+    "estr_pct": 2.439,
+    "ctd": "DBR 2.6 08/15/35",
+    "ctd_implied_repo_pct": 0.828,
+    "ctd_net_basis_cents": 23.69
+   },
+   {
+    "date": "2026-10-14",
+    "futures": 120.96,
+    "estr_pct": 2.44,
+    "ctd": "DBR 2.6 08/15/35",
+    "ctd_implied_repo_pct": 1.206,
+    "ctd_net_basis_cents": 17.79
+   },
+   {
+    "date": "2026-10-15",
+    "futures": 121.66,
+    "estr_pct": 2.44,
+    "ctd": "DBR 2.6 08/15/35",
+    "ctd_implied_repo_pct": 1.788,
+    "ctd_net_basis_cents": 8.94
+   },
+   {
+    "date": "2026-10-16",
+    "futures": 121.62,
+    "estr_pct": 2.441,
+    "ctd": "DBR 2.6 08/15/35",
+    "ctd_implied_repo_pct": 3.109,
+    "ctd_net_basis_cents": -8.95
+   },
+   {
+    "date": "2026-10-19",
+    "futures": 121.14,
+    "estr_pct": 2.441,
+    "ctd": "DBR 2.6 08/15/35",
+    "ctd_implied_repo_pct": 0.897,
+    "ctd_net_basis_cents": 20.29
+   },
+   {
+    "date": "2026-10-20",
+    "futures": 121.71,
+    "estr_pct": 2.44,
+    "ctd": "DBR 2.6 08/15/35",
+    "ctd_implied_repo_pct": 3.822,
+    "ctd_net_basis_cents": -17.8
+   },
+   {
+    "date": "2026-10-21",
+    "futures": 121.41,
+    "estr_pct": 2.44,
+    "ctd": "DBR 2.6 08/15/35",
+    "ctd_implied_repo_pct": 1.606,
+    "ctd_net_basis_cents": 10.54
+   },
+   {
+    "date": "2026-10-22",
+    "futures": 122.21,
+    "estr_pct": 2.442,
+    "ctd": "DBR 2.6 08/15/35",
+    "ctd_implied_repo_pct": 5.067,
+    "ctd_net_basis_cents": -31.15
+   },
+   {
+    "date": "2026-10-23",
+    "futures": 122.17,
+    "estr_pct": 2.442,
+    "ctd": "DBR 2.6 08/15/35",
+    "ctd_implied_repo_pct": 0.971,
+    "ctd_net_basis_cents": 17.15
+   },
+   {
+    "date": "2026-10-26",
+    "futures": 122.01,
+    "estr_pct": 2.441,
+    "ctd": "DBR 2.6 08/15/35",
+    "ctd_implied_repo_pct": 2.748,
+    "ctd_net_basis_cents": -3.49
+   },
+   {
+    "date": "2026-10-27",
+    "futures": 122.09,
+    "estr_pct": 2.44,
+    "ctd": "DBR 2.6 08/15/35",
+    "ctd_implied_repo_pct": 2.585,
+    "ctd_net_basis_cents": -1.61
+   }
+  ]
+ }
+}

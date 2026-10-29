@@ -44,10 +44,16 @@ source = ["ratescurve"]
 line-length = 120
 target-version = "py311"
 src = ["src", "tests", "scripts"]
+# historical Phase 0 scripts run against the audited commit, not this package
+extend-exclude = ["scripts/audit"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "N", "SIM", "NPY", "RUF"]
 ignore = ["N803", "N806", "RUF001", "RUF002", "RUF003", "B905", "RUF007"]
+
+[tool.ruff.lint.per-file-ignores]
+# report prose is assembled from long f-strings
+"scripts/run_results.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.11"
