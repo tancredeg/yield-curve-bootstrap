@@ -28,10 +28,26 @@ jobs:
       - name: Install
         run: python -m pip install -e ".[dev]"
       - name: Ruff lint
-        run: ruff check src tests scripts --exclude scripts/audit
+        run: ruff check .
       - name: Ruff format
-        run: ruff format --check src tests scripts --exclude scripts/audit
+        run: ruff format --check .
       - name: Mypy
         run: mypy
       - name: Pytest with coverage
         run: pytest --cov=ratescurve --cov-report=term --cov-fail-under=80
+
+  results:
+    name: published results are reproducible
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: python -m pip install -e ".[dev]"
+      - name: README, docs/results.md and docs/key_results.json match scripts/run_results.py
+        run: python scripts/run_results.py --check
+      - name: Demo notebook runs end to end in under two minutes
+        run: python scripts/run_notebook.py
