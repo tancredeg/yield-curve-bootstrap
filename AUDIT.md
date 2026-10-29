@@ -121,16 +121,16 @@ The overshoot is printed in the titles of figures 02/03 ("max |shock| = 58bp" fo
 
 ---
 
-## 3. Decisions required before Phase 1
+## 3. Decisions (taken 2026-10-28, autonomous session, recommended option in each case)
 
-| # | Decision | Options | Recommendation |
+| # | Decision | Taken | Why |
 |---|---|---|---|
-| D1 | Unpushed later version? | Push it and re-audit the delta / treat HEAD as the baseline | Answer first; it changes the scope of Phase 1. |
-| D2 | Swaps | Remove / rename "par instruments on the government curve" / keep | **Remove.** Govt cash + futures story is coherent and defensible. |
-| D3 | EUR calibration | (A) keep ECB zeros ingested, no EUR bootstrap; (B) fit a German government curve on a selection of Bunds from Bundesbank daily prices | **(B).** The dated engine is required for futures anyway; it makes the EUR repricing test meaningful and gives R2 a real portfolio. Cost: about one extra session. |
-| D4 | Scenarios | Rebuild as BCBS (d578 sizes, exponential shapes) / drop | Keep as a secondary module, correctly implemented, outside the README headline results (not in the brief). |
-| D5 | As-of date | One common as-of date for every snapshot / keep 2026-06-02 | **One date**, chosen as the futures snapshot date (front FGBL contract). |
-| D6 | USD | Keep / drop | **Keep.** Cleanest par-repricing demonstration; Treasury history feeds R3. |
+| D1 | Unpushed later version? | **HEAD `247592a` is the baseline.** No later commit exists on the remote, so the audit applies in full. | The public repo is what a recruiter sees. |
+| D2 | Swaps | **Removed.** | No free OIS term quotes: swaps priced on government curves were indefensible (M2). |
+| D3 | EUR calibration | **(B) Exact fit to Bundesbank-priced Bunds**, with a selection rule fixed in advance; the ECB AAA curve is kept only for the EUR PCA. | Makes the EUR repricing test meaningful and gives R2 and R4 real, dated bonds. |
+| D4 | Scenarios | **Kept as a secondary module** (SRP31 shapes, July 2024 sizes), applied continuously in maturity; used for the R2 P&L columns only. | Not in the brief; correct implementation fixes B3. |
+| D5 | As-of date | **27 October 2026** for every snapshot (Treasury, Bundesbank, Eurex settlement, €STR); histories from January 2023. | Latest date with all sources published when the sample was frozen. |
+| D6 | USD | **Kept**: Treasury par curve calibration and USD PCA. | Cleanest par-repricing demonstration. |
 
 ---
 
@@ -173,15 +173,54 @@ Estimate: 10-12 sessions, 25-35 h, i.e. 4-5 weeks at 6-8 h/week. Estimate, not a
 
 ---
 
-## 5. Data sources (checked 2026-10-13)
+## 5. Data sources (checked 2026-10-13, updated 2026-10-29)
 
 | Data | Source | Status |
 |---|---|---|
 | USD par curve | home.treasury.gov daily par yield curve | Working. Monotone convex since 6 Dec 2021; inputs are bid-side indicative quotes on the most recently auctioned securities, around 3:30 pm. |
 | EUR AAA zeros | ECB Data API, dataset `YC`, `B.U2.EUR.4F.G_N_A.SV_C_YM.*` | Working. |
-| €STR | ECB Data Portal, dataset `EST`, `EST.B.EU000A2X2A25.WT` | Series exists; fetcher to write. |
-| Bund prices | Bundesbank, "Prices and yields of listed Federal securities": daily reference prices per ISIN, monthly XLSX/PDF files | Exists; column layout to verify in Phase 1. |
+| €STR | ECB Data Portal, dataset `EST`, `EST.B.EU000A2X2A25.WT` | Fetched and frozen from January 2023. |
+| Bund prices | Bundesbank, "Prices and yields of listed Federal securities": daily reference prices per ISIN, monthly XLSX/PDF files | One sheet per trading day: ISIN, coupon, description, maturity, residual life, issue volume, clean price, yield, dirty price; parsed and frozen for October 2026. |
 | FGBL basket and CF | Eurex, "Deliverable Bonds and Conversion Factors"; Eurex CF calculation methodology (PDF) | Exists. |
-| FGBL settlement price | Eurex product pages | Visible daily; bulk historical download not confirmed → single snapshot, frozen with source note. |
-| IRRBB sizes | BCBS d368 (2016); d578 recalibration (July 2024, in force 1 Jan 2026) | Recalibrated sizes reported by a secondary source: EUR 225/350/200 bp, USD 200/300/225 bp (parallel/short/long). To confirm against d578 itself before coding. |
+| FGBL settlement price | Eurex statistics API (`/api/v1/overallstatistics/34656`) | Daily settlement, OHLC, volume and open interest per contract; October 2026 frozen. |
+| IRRBB sizes | BCBS d368 (2016); d578 recalibration (July 2024, in force 1 Jan 2026) | Confirmed against Basel Framework SRP31 (version in force 1 Jan 2026): EUR 225/350/200 bp, USD 200/300/225 bp (parallel/short/long); SRP31.92 worked example used as a unit test. |
 | SOFR / €STR OIS term quotes | — | No free official source identified (assumption). |
+
+---
+
+## 6. Resolution (status at tag v1.0)
+
+Every finding was re-checked against the code after the rebuild. Commits: `6a3c208` src layout and removal of the legacy script; `700823f` core (dated bonds, four schemes, global calibration); `213f283` analytics (risk, PCA, futures, scenarios); `1d2971f` frozen data; `4e74926` tests; `7f357c3` CI; `05dbfa6` Windows checksum fix; `c0b7972` data wording; `e97e987` test hardening; `9b08525` results and README; `34a514e` results and notebook in CI.
+
+| Finding | Status | Where |
+|---|---|---|
+| B1 hard-coded narrative | Fixed: no narrative in the library; every sentence of README and `docs/results.md` is generated from computed values, and data-dependent claims are checked by `ensure()` in `scripts/run_results.py`, which fails rather than print an unsupported claim | `9b08525` |
+| B2 false claims in README and comments | Fixed: README rewritten; each claim is either an input (convention, rule) or a generated number; the CI checks that published numbers equal the script output | `9b08525`, `34a514e` |
+| B3 scenario shock not applied as declared | Fixed: `ShiftedCurve` applies `z(t) + s(t)` pointwise, never re-interpolated; test asserts applied = declared shock on a 300-point grid for all six SRP31 scenarios | `700823f`, `4e74926` |
+| M1 calibration curve ≠ pricing curve | Fixed: one global calibration per scheme; the calibrated curve is the pricing curve; repricing error below 1e-11 bp for every instrument and scheme | `700823f`, `1d2971f`, `4e74926` |
+| M2 swaps on government curves | Fixed by removal (D2) | `6a3c208` |
+| M3 natural spline as reference, no monotone convex | Fixed: Hagan-West monotone convex with the positivity amendment is the default, validated against tf-quant-finance and by property tests; the spline is kept as a counter-example | `700823f`, `4e74926` |
+| M4 EUR leg not calibrated | Fixed: exact fit to 15 Bunds (D3) with dated cash flows; 49 out-of-sample bonds repriced | `700823f`, `1d2971f` |
+| M5 no dates in the bond engine | Fixed: TARGET2 calendar, T+2, ACT/ACT ICMA, short and long first coupons inferred from published accrued interest; 1,459 Bundesbank accrued amounts and yields reproduced | `700823f`, `1d2971f` |
+| M6 risk limited to yield DV01 | Fixed: parallel, key-rate (Ho) and bucketed DV01; key-rate sum and bucket additivity tested | `213f283`, `e97e987` |
+| M7 tests test little | Fixed: 92 tests, coverage above 95% on `src/`, external oracles (Bundesbank, Eurex, QuantLib, tf-quant-finance), golden regression on the frozen sample | `4e74926`, `e97e987` |
+| M8 not reproducible | Fixed: dated fetch into git-ignored `data/raw/`, frozen `data/sample/` with SHA-256 manifest, exact pins, no import side effects or prints in the library; CI on Linux and Windows | `6a3c208`, `1d2971f`, `7f357c3`, `05dbfa6` |
+| M9 Nelson-Siegel on the grid boundary | Closed: Nelson-Siegel is no longer used; monotone convex replaces it | `6a3c208` |
+| m1 silent NaN outside the curve | Fixed: out-of-domain times raise `ValueError` | `700823f` |
+| m2 unused day-count arguments | Fixed: day counts are explicit functions, used where named | `700823f` |
+| m3 flat discount factor below the first pillar | Fixed: flat zero rate below the first pillar (monotone convex extrapolates the forward to t = 0) | `700823f` |
+| m4 silent non-convergence | Fixed: `CalibrationError` if any residual exceeds tolerance | `700823f` |
+| m5 runtime `assert` | Fixed: no `assert` in `src/` | `700823f` |
+| m6 YTM solver excludes negative yields | Fixed: bracket [-50%, 100%], negative yields tested | `700823f`, `4e74926` |
+| m7 inconsistent tolerances | Fixed: one relative calibration tolerance (1e-10); test tolerances stated with their units | `700823f`, `4e74926` |
+| m8 spread artefact in figure 04 | Closed: figure removed | `6a3c208` |
+| n1 README in French | Fixed: English README in the standard order | `9b08525` |
+| n2 `.vscode/`, BOMs | Fixed: removed | `6a3c208` |
+| n3 single 1409-line script, duplicated curve code | Fixed: 13-module package, one curve object | `6a3c208` |
+
+Found during the rebuild and handled:
+
+- Windows CI failed the manifest checksum because git rewrote CSV line endings; `.gitattributes` marks the frozen data as binary (`05dbfa6`).
+- The first bucketed-DV01 test used a calibration bond and could not fail; replaced by an off-pillar test (`e97e987`).
+- Monotone convex is only piecewise smooth in its quotes: with 1 bp bumps its bucket DV01s overstate the joint sensitivity by about 3% on the Bund curve; published bucketed risk uses 0.01 bp bumps and a test documents the effect (`e97e987`, `9b08525`).
+- An unverified "around noon" fixing time for Bundesbank prices was removed from the data manifest (`c0b7972`).
