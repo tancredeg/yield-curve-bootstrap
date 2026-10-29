@@ -15,7 +15,7 @@ The US Treasury and German Bund curves are calibrated exactly to public market q
 | R3. How many factors drive daily curve moves? (2023-2026) | Level / slope / curvature: 83.0 / 10.7 / 2.9% (USD), 80.6 / 10.8 / 4.7% (EUR) | Three factors carry about 96% of the variance, the basis for factor hedging and scenario design. |
 | R4. Which Bund is cheapest to deliver into FGBL Dec-26? (2026-10-27) | DBR 2.6 08/15/35: implied repo 2.58% vs €STR 2.44%, net basis -1.6 c; CTD switch after a +216 bp parallel rise | Below the 6% notional coupon the lowest-duration bond is CTD; over the month its implied repo averaged within one daily standard deviation of €STR. |
 
-Validation: every calibration instrument reprices to 6e-12 bp under each scheme; 1459 Bundesbank accrued amounts and yields are reproduced to 6e-14 per 100 and 5e-05 bp; 43 of 43 Eurex conversion factors are reproduced to six decimals.
+Validation: every calibration instrument reprices to within 1e-10 bp under each scheme; 1459 Bundesbank accrued amounts and yields are reproduced to within 1e-12 per 100 and 1e-04 bp; 43 of 43 Eurex conversion factors are reproduced to six decimals.
 <!-- /results:key -->
 
 ![Instantaneous forwards by interpolation scheme](docs/figures/r1_forwards_by_interpolation.png)

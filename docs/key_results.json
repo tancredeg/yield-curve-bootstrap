@@ -4,8 +4,8 @@
   "bundesbank_quotes": 1459,
   "bundesbank_days": 19,
   "bundesbank_securities": 78,
-  "max_accrued_error_per_100": 5.9e-14,
-  "max_yield_error_bp": 5e-05,
+  "max_accrued_error_below_per_100": 1e-12,
+  "max_yield_error_below_bp": 0.0001,
   "eurex_cf_total": 43,
   "eurex_cf_matched": 43,
   "eurex_products": [
@@ -29,7 +29,7 @@
    "widest_window": "15y5y",
    "methods": {
     "monotone_convex": {
-     "repricing_error_bp": 6e-12,
+     "repricing_error_below_bp": 1e-10,
      "forward_min_pct": 4.087,
      "forward_max_pct": 6.094,
      "max_forward_jump_bp": 0.0,
@@ -38,7 +38,7 @@
      "fwd_15y5y_pct": 5.85
     },
     "log_linear_df": {
-     "repricing_error_bp": 6e-12,
+     "repricing_error_below_bp": 1e-10,
      "forward_min_pct": 4.093,
      "forward_max_pct": 5.857,
      "max_forward_jump_bp": 80.9,
@@ -47,7 +47,7 @@
      "fwd_15y5y_pct": 5.857
     },
     "linear_zero": {
-     "repricing_error_bp": 6e-12,
+     "repricing_error_below_bp": 1e-10,
      "forward_min_pct": 4.093,
      "forward_max_pct": 6.37,
      "max_forward_jump_bp": 120.4,
@@ -56,7 +56,7 @@
      "fwd_15y5y_pct": 6.135
     },
     "natural_cubic_zero": {
-     "repricing_error_bp": 6e-12,
+     "repricing_error_below_bp": 1e-10,
      "forward_min_pct": 4.068,
      "forward_max_pct": 6.196,
      "max_forward_jump_bp": 2.4,
@@ -79,7 +79,7 @@
    "widest_window": "15y5y",
    "methods": {
     "monotone_convex": {
-     "repricing_error_bp": 1.7e-12,
+     "repricing_error_below_bp": 1e-10,
      "forward_min_pct": 2.843,
      "forward_max_pct": 4.171,
      "max_forward_jump_bp": 0.0,
@@ -90,7 +90,7 @@
      "oos_n": 49
     },
     "log_linear_df": {
-     "repricing_error_bp": 0.0,
+     "repricing_error_below_bp": 1e-10,
      "forward_min_pct": 2.9,
      "forward_max_pct": 4.148,
      "max_forward_jump_bp": 38.1,
@@ -101,7 +101,7 @@
      "oos_n": 49
     },
     "linear_zero": {
-     "repricing_error_bp": 0.0,
+     "repricing_error_below_bp": 1e-10,
      "forward_min_pct": 2.9,
      "forward_max_pct": 4.3,
      "max_forward_jump_bp": 47.0,
@@ -112,7 +112,7 @@
      "oos_n": 49
     },
     "natural_cubic_zero": {
-     "repricing_error_bp": 0.0,
+     "repricing_error_below_bp": 1e-10,
      "forward_min_pct": 2.9,
      "forward_max_pct": 4.203,
      "max_forward_jump_bp": 13.6,
@@ -127,7 +127,7 @@
   "continuous_forward_schemes": [
    "monotone_convex"
   ],
-  "max_repricing_error_bp": 6e-12,
+  "max_repricing_error_below_bp": 1e-10,
   "best_oos": "monotone_convex"
  },
  "r2": {

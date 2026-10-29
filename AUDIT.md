@@ -197,7 +197,7 @@ Every finding was re-checked against the code after the rebuild. Commits: `6a3c2
 | B1 hard-coded narrative | Fixed: no narrative in the library; every sentence of README and `docs/results.md` is generated from computed values, and data-dependent claims are checked by `ensure()` in `scripts/run_results.py`, which fails rather than print an unsupported claim | `9b08525` |
 | B2 false claims in README and comments | Fixed: README rewritten; each claim is either an input (convention, rule) or a generated number; the CI checks that published numbers equal the script output | `9b08525`, `34a514e` |
 | B3 scenario shock not applied as declared | Fixed: `ShiftedCurve` applies `z(t) + s(t)` pointwise, never re-interpolated; test asserts applied = declared shock on a 300-point grid for all six SRP31 scenarios | `700823f`, `4e74926` |
-| M1 calibration curve ≠ pricing curve | Fixed: one global calibration per scheme; the calibrated curve is the pricing curve; repricing error below 1e-11 bp for every instrument and scheme | `700823f`, `1d2971f`, `4e74926` |
+| M1 calibration curve ≠ pricing curve | Fixed: one global calibration per scheme; the calibrated curve is the pricing curve; repricing error below 1e-10 bp for every instrument and scheme (machine-precision level, about 1e-12 bp) | `700823f`, `1d2971f`, `4e74926` |
 | M2 swaps on government curves | Fixed by removal (D2) | `6a3c208` |
 | M3 natural spline as reference, no monotone convex | Fixed: Hagan-West monotone convex with the positivity amendment is the default, validated against tf-quant-finance and by property tests; the spline is kept as a counter-example | `700823f`, `4e74926` |
 | M4 EUR leg not calibrated | Fixed: exact fit to 15 Bunds (D3) with dated cash flows; 49 out-of-sample bonds repriced | `700823f`, `1d2971f` |
@@ -224,3 +224,4 @@ Found during the rebuild and handled:
 - The first bucketed-DV01 test used a calibration bond and could not fail; replaced by an off-pillar test (`e97e987`).
 - Monotone convex is only piecewise smooth in its quotes: with 1 bp bumps its bucket DV01s overstate the joint sensitivity by about 3% on the Bund curve; published bucketed risk uses 0.01 bp bumps and a test documents the effect (`e97e987`, `9b08525`).
 - An unverified "around noon" fixing time for Bundesbank prices was removed from the data manifest (`c0b7972`).
+- The results check passed on one GitHub runner and failed on another: machine-precision repricing errors (0 to 2e-12 bp) depend on the CPU's BLAS kernel. Such errors are now published as bounds (below 1e-10 bp), and the outputs are identical under five forced OpenBLAS kernels.

@@ -152,9 +152,16 @@ def r(x: float, nd: int) -> float:
     return float(round(float(x), nd)) + 0.0
 
 
-def sci(x: float) -> float:
-    """One significant digit, for error magnitudes."""
-    return float(f"{float(x):.1e}")
+def below(x: float, floor: float) -> float:
+    """Smallest power of ten at or above ``x``, never below ``floor``.
+
+    Errors at machine-precision level change with the CPU and BLAS kernel; publishing a bound keeps
+    the published outputs identical on every machine while still proving the accuracy claimed.
+    """
+    bound = floor
+    while bound < abs(x):
+        bound *= 10.0
+    return float(f"{bound:.0e}")
 
 
 def ensure(condition: bool, claim: str) -> None:
@@ -215,8 +222,8 @@ def validation() -> dict[str, Any]:
         "bundesbank_quotes": len(conv),
         "bundesbank_days": int(conv["price_date"].nunique()),
         "bundesbank_securities": int(conv["isin"].nunique()),
-        "max_accrued_error_per_100": sci(worst_ai),
-        "max_yield_error_bp": sci(worst_y),
+        "max_accrued_error_below_per_100": below(worst_ai, 1e-12),
+        "max_yield_error_below_bp": below(worst_y, 1e-4),
         "eurex_cf_total": len(dl),
         "eurex_cf_matched": matches,
         "eurex_products": sorted(str(p) for p in dl["product"].unique()),
@@ -242,7 +249,7 @@ def r1(
             jumps = np.abs(c.forward(pillars + 1e-9) - c.forward(pillars - 1e-9)) * 1e4
             f = c.forward(grid)
             row: dict[str, Any] = {
-                "repricing_error_bp": sci(repricing_error_bp(ccy, mk[m])),
+                "repricing_error_below_bp": below(repricing_error_bp(ccy, mk[m]), 1e-10),
                 "forward_min_pct": r(f.min() * 100, 3),
                 "forward_max_pct": r(f.max() * 100, 3),
                 "max_forward_jump_bp": r(jumps.max(), 1),
@@ -278,8 +285,8 @@ def r1(
 
     smooth = [m for m in METHODS if all(out[c]["methods"][m]["max_forward_jump_bp"] < 0.05 for c in out)]
     out["continuous_forward_schemes"] = smooth
-    out["max_repricing_error_bp"] = max(
-        out[c]["methods"][m]["repricing_error_bp"] for c in ("USD", "EUR") for m in METHODS
+    out["max_repricing_error_below_bp"] = max(
+        out[c]["methods"][m]["repricing_error_below_bp"] for c in ("USD", "EUR") for m in METHODS
     )
     oos = {m: out["EUR"]["methods"][m]["oos_rms_bp"] for m in METHODS}
     out["best_oos"] = min(oos, key=lambda k: oos[k])
@@ -738,7 +745,7 @@ def r1_text(o: dict[str, Any]) -> str:
                 [
                     ccy,
                     LABEL[m],
-                    f"{v['repricing_error_bp']:.0e}",
+                    f"< {v['repricing_error_below_bp']:.0e}",
                     f"{v['max_forward_jump_bp']:.1f}",
                     f"{v['forward_min_pct']:.2f}-{v['forward_max_pct']:.2f}",
                     *[f"{v[f'fwd_{a}y{b}y_pct']:.3f}" for a, b in FWD_WINDOWS],
@@ -763,7 +770,7 @@ def r1_text(o: dict[str, Any]) -> str:
         table(head, rows)
         + "\n\n"
         + f"All four schemes reprice their own calibration instruments ({usd['instruments']} Treasury par points, "
-        f"{eur['instruments']} Bunds) to within {o['max_repricing_error_bp']:.0e} bp and their zero curves differ by at "
+        f"{eur['instruments']} Bunds) to within {o['max_repricing_error_below_bp']:.0e} bp and their zero curves differ by at "
         f"most {usd['max_zero_spread_bp']:.1f} bp (USD) and {eur['max_zero_spread_bp']:.1f} bp (EUR), yet their "
         f"instantaneous forwards differ by up to {usd['max_forward_spread_bp']:.0f} bp and {eur['max_forward_spread_bp']:.0f}"
         f" bp, and the USD {w_u} forward by {usd['forward_window_spread_bp'][w_u]:.1f} bp: the interpolation scheme is a "
@@ -962,16 +969,16 @@ def validation_text(v: dict[str, Any], r1o: dict[str, Any]) -> str:
             [
                 "Calibration instruments repriced under each of the four schemes",
                 f"{r1o['USD']['instruments']} Treasury par points and {r1o['EUR']['instruments']} Bunds, max error "
-                f"{r1o['max_repricing_error_bp']:.0e} bp",
+                f"below {r1o['max_repricing_error_below_bp']:.0e} bp",
             ],
             [
                 "Bundesbank accrued interest (dirty - clean) reproduced, ACT/ACT ICMA, T+2",
                 f"{v['bundesbank_quotes']} quotes ({v['bundesbank_securities']} securities, {v['bundesbank_days']} days), "
-                f"max error {v['max_accrued_error_per_100']:.0e} per 100",
+                f"max error below {v['max_accrued_error_below_per_100']:.0e} per 100",
             ],
             [
                 "Bundesbank yields reproduced (ICMA annual compounding)",
-                f"max error {v['max_yield_error_bp']:.0e} bp (published to 1e-6 %)",
+                f"max error below {v['max_yield_error_below_bp']:.0e} bp (published to 1e-6 %)",
             ],
             [
                 "Eurex conversion factors reproduced to six decimals",
@@ -1031,9 +1038,9 @@ def key_block(res: dict[str, Any]) -> str:
         "the CTD's IRR minus €STR is within one daily standard deviation of zero on average",
     )
     validation_line = (
-        f"Validation: every calibration instrument reprices to {r1o['max_repricing_error_bp']:.0e} bp under each scheme; "
-        f"{v['bundesbank_quotes']} Bundesbank accrued amounts and yields are reproduced to "
-        f"{v['max_accrued_error_per_100']:.0e} per 100 and {v['max_yield_error_bp']:.0e} bp; "
+        f"Validation: every calibration instrument reprices to within {r1o['max_repricing_error_below_bp']:.0e} bp under each scheme; "
+        f"{v['bundesbank_quotes']} Bundesbank accrued amounts and yields are reproduced to within "
+        f"{v['max_accrued_error_below_per_100']:.0e} per 100 and {v['max_yield_error_below_bp']:.0e} bp; "
         f"{v['eurex_cf_matched']} of {v['eurex_cf_total']} Eurex conversion factors are reproduced to six decimals."
     )
     return table(["Question", "Result (as of 27 Oct 2026)", "Reading"], rows) + "\n\n" + validation_line
@@ -1077,6 +1084,15 @@ def results_md(res: dict[str, Any]) -> str:
             "",
         ]
     )
+
+
+def json_diff(old: Any, new: Any, path: str = "") -> list[tuple[str, Any, Any]]:
+    """Leaf-level differences between two JSON documents (for the --check diagnostic)."""
+    if isinstance(old, dict) and isinstance(new, dict):
+        return [d for k in sorted(set(old) | set(new)) for d in json_diff(old.get(k), new.get(k), f"{path}.{k}")]
+    if isinstance(old, list) and isinstance(new, list) and len(old) == len(new):
+        return [d for i, (a, b) in enumerate(zip(old, new)) for d in json_diff(a, b, f"{path}[{i}]")]
+    return [] if old == new else [(path, old, new)]
 
 
 def inject(readme: str, name: str, body: str) -> str:
@@ -1124,6 +1140,9 @@ def main() -> None:
             stale.append("README.md")
         if stale:
             print("Out of date: " + ", ".join(stale) + ". Run: python scripts/run_results.py")
+            if KEY_JSON.exists():
+                for key, old, new in json_diff(json.loads(KEY_JSON.read_text(encoding="utf-8")), json.loads(key_json)):
+                    print(f"  {key}: committed {old!r}, recomputed {new!r}")
             sys.exit(1)
         print("README, docs/results.md and docs/key_results.json are up to date.")
         return
