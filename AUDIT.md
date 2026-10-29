@@ -188,7 +188,7 @@ Estimate: 10-12 sessions, 25-35 h, i.e. 4-5 weeks at 6-8 h/week. Estimate, not a
 
 ---
 
-## 6. Resolution (status at tag v1.0)
+## 6. Resolution (status on 2026-10-29)
 
 Every finding was re-checked against the code after the rebuild. Commits: `6a3c208` src layout and removal of the legacy script; `700823f` core (dated bonds, four schemes, global calibration); `213f283` analytics (risk, PCA, futures, scenarios); `1d2971f` frozen data; `4e74926` tests; `7f357c3` CI; `05dbfa6` Windows checksum fix; `c0b7972` data wording; `e97e987` test hardening; `9b08525` results and README; `34a514e` results and notebook in CI.
 
