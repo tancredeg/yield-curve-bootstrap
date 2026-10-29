@@ -1,0 +1,4 @@
+# Frozen data are checksummed byte for byte (data/sample/MANIFEST.json):
+# never convert their line endings on checkout (Windows core.autocrlf).
+data/sample/** -text
+tests/fixtures/** -text
