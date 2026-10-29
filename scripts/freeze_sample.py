@@ -165,7 +165,7 @@ def main() -> None:
         "estr.csv": (freeze_estr(args.asof), "Euro short-term rate, volume-weighted trimmed mean, percent, ACT/360"),
         "bundesbank_federal_securities.csv": (
             quotes,
-            "Bundesbank reference prices (around noon, Frankfurt) "
+            "Bundesbank reference prices at the Frankfurt Stock Exchange "
             "and yields of listed Federal securities; clean and dirty price "
             "per 100, yield in percent",
         ),

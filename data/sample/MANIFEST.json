@@ -22,7 +22,7 @@
     "bundesbank_federal_securities.csv": {
       "sha256": "fec3b59e82e8515eacc8bd8ad0095006374e21847bfe9c084dcc1ae5f6ac39ef",
       "rows": 1516,
-      "description": "Bundesbank reference prices (around noon, Frankfurt) and yields of listed Federal securities; clean and dirty price per 100, yield in percent"
+      "description": "Bundesbank reference prices at the Frankfurt Stock Exchange and yields of listed Federal securities; clean and dirty price per 100, yield in percent"
     },
     "bond_static.csv": {
       "sha256": "9e6c04377068ae5c3ac2fb2cf429dcb595fc0fd5f772f2f5643ecd2746f5e09d",
