@@ -12,6 +12,7 @@
 | 2026-10-29 | 4 Results | `scripts/run_results.py`: R1-R4, `docs/results.md`, `docs/key_results.json`, `docs/figures/`; claims checked by `ensure()` | Done; `--check` in CI |
 | 2026-10-29 | 5 README | English, standard order, key-results block generated | Done |
 | 2026-10-29 | 6 Delivery | `notebooks/demo.ipynb` (runs in seconds, checked in CI); release notes drafted | Notebook done; tag `v1.0` not pushed (the session's git proxy refused tag pushes) |
+| 2026-11-10 | Maintenance | `.gitignore`: local working folder `entretien/` excluded | Done |
 
 ## Open items
 

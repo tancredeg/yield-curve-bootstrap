@@ -15,3 +15,5 @@ dist/
 .ipynb_checkpoints/
 # raw downloads (data/sample/ is the versioned snapshot)
 data/raw/
+# local working notes, never published
+entretien/
