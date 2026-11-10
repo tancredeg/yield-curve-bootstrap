@@ -99,10 +99,11 @@ FGBL_DEC26 = "20261208"
 FUTURES_MOVE_CENTS = 10.0
 USD_PCA_TENORS = ["3M", "6M", "1Y", "2Y", "3Y", "5Y", "7Y", "10Y", "20Y", "30Y"]
 
-# Chart tokens (light surface): categorical slots in a fixed order, recessive chrome.
+# Plot colours: one fixed colour per series, muted axes and grid.
 SURFACE, INK, INK2, MUTED, GRID, AXIS = "#fcfcfb", "#0b0b0b", "#52514e", "#898781", "#e1e0d9", "#c3c2b7"
 SLOTS = ("#2a78d6", "#eb6834", "#1baf7a", "#eda100")
-DASH: tuple[Any, ...] = ("-", (0, (6, 2)), (0, (2, 1.5)), (0, (8, 2, 2, 2)))  # second encoding for print and CVD
+# Line styles keep the series distinguishable without colour.
+DASH: tuple[Any, ...] = ("-", (0, (6, 2)), (0, (2, 1.5)), (0, (8, 2, 2, 2)))
 
 SaveFn = Callable[[Any, str], None]
 

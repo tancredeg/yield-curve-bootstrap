@@ -150,9 +150,4 @@ class ParInstrument:
         return flows
 
 
-def months_to_years(months: float) -> float:
-    """Tenor in months to years (exact twelfths)."""
-    return months / 12.0
-
-
-__all__ = ["FixedRateBond", "ParInstrument", "add_months", "months_to_years"]
+__all__ = ["FixedRateBond", "ParInstrument", "add_months"]

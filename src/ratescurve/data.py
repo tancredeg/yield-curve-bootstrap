@@ -15,7 +15,6 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import cast
 
-import numpy as np
 import pandas as pd
 
 from .bonds import yield_from_dirty
@@ -235,8 +234,3 @@ def load_deliverables(sample_dir: Path = SAMPLE_DIR) -> pd.DataFrame:
     df = pd.read_csv(sample_dir / "eurex_deliverable_bonds.csv", dtype={"contract": str})
     df["maturity"] = pd.to_datetime(df["maturity"]).dt.date
     return df
-
-
-def as_decimal(values: pd.DataFrame | pd.Series) -> np.ndarray:
-    """Percent to decimal as a float array."""
-    return np.asarray(values, dtype=float) / 100.0

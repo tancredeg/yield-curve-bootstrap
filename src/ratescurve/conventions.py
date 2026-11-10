@@ -60,7 +60,7 @@ def add_business_days(d: date, n: int) -> date:
 
 
 def following(d: date) -> date:
-    """Following business-day convention."""
+    """Next TARGET2 business day on or after ``d`` (following convention)."""
     while not is_business_day(d):
         d += timedelta(days=1)
     return d

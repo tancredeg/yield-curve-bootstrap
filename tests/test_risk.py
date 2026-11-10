@@ -12,14 +12,6 @@ from ratescurve.risk import bucketed_dv01, key_rate_dv01, key_rate_shifts, paral
 KEYS = (1, 2, 3, 5, 7, 10, 15, 20, 30)
 
 
-def _portfolio(market, isins_nominals):
-    quotes = market.instruments
-    return [
-        (bond_pricer(next(b for b, i in zip(quotes["bond"], quotes["isin"]) if i == isin), market.settle), n)
-        for isin, n in isins_nominals
-    ]
-
-
 def test_key_rate_bumps_partition_a_parallel_shift():
     grid = np.linspace(0, 30, 301)
     total = sum(s(grid) for s in key_rate_shifts(KEYS))

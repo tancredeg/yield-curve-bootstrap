@@ -15,5 +15,10 @@ dist/
 .ipynb_checkpoints/
 # raw downloads (data/sample/ is the versioned snapshot)
 data/raw/
-# local working notes, never published
+# local working files, not part of the project
+.claude/
+CLAUDE.md
+AUDIT.md
+PROGRESS.md
+scripts/audit/
 entretien/

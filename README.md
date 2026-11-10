@@ -100,7 +100,6 @@ scripts/
 tests/                invariants, published-value replication, oracles (QuantLib, tf-quant-finance), regression
 notebooks/demo.ipynb  end-to-end walkthrough
 docs/                 results.md, key_results.json, figures/
-AUDIT.md              initial code audit and its resolution; PROGRESS.md: work log
 ```
 
 ## References
@@ -115,3 +114,5 @@ AUDIT.md              initial code audit and its resolution; PROGRESS.md: work l
 - ECB, [euro area yield curves](https://data.ecb.europa.eu/data/datasets/YC) and [euro short-term rate](https://data.ecb.europa.eu/data/datasets/EST).
 - Basel Committee on Banking Supervision, [SRP31 Interest rate risk in the banking book](https://www.bis.org/basel_framework/chapter/SRP/31.htm) and [Recalibration of shocks in the IRRBB standard (d578, July 2024)](https://www.bis.org/bcbs/publ/d578.pdf).
 - ICMA, Primary Market Handbook, Rule 251 (ACT/ACT ICMA accrued interest).
+
+Built in collaboration with Claude (Anthropic) as a coding assistant.

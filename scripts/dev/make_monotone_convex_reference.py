@@ -40,4 +40,4 @@ with open(sys.argv[1], "w") as fh:
         {"source": "tf-quant-finance 0.0.1.dev34, tf_quant_finance.rates.hagan_west.monotone_convex", "cases": cases},
         fh,
     )
-print("ok", len(cases))
+print(f"Wrote {len(cases)} reference cases to {sys.argv[1]}")
